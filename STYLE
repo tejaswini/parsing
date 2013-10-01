@@ -1,0 +1,13 @@
+
+
+- Space after commas, if
+- Maximum 80 lines
+- Special __main__ function
+- String hash table lookups are slow, string concat is slow avoid
+
+- Comments are great. space after # and also whenever possible docstrings
+
+- remove select root. 
+
+- instead of for root in range(0,len(self.words)):
+for root, rootord in enumerate(self.words)):
