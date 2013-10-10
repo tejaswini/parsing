@@ -31,7 +31,8 @@ class InsideAlgo:
 
                     is_adj = self.is_adjacent(s,t)
 
-                    if((str(t),str(r+1)) in self.lconstit2 and (str(s),str(r)) in self.rconstit):
+                    if((str(t),str(r+1)) in self.lconstit2 \
+                           and (str(s),str(r)) in self.rconstit):
                         self.rtrap[str(s),str(t)] = self.rconstit[str(s),str(r)] * self.lconstit2[str(t),str(r+1)] * self.dep[self.words[s],self.words[t],"right",is_adj] * self.cont[self.words[s],"right",is_adj]
 
                         self.add_combination(self.combinations_rtrap,(str(s),str(t)),str(s) + "," + str(r) + "," + str(t))
@@ -80,7 +81,7 @@ class InsideAlgo:
         return "adj" if (term_beg == term_end) else "non-adj"
 
     def init_all_dicts(self):
-        with open("initial_values","rb") as fp:
+        with open("data/initial_values","rb") as fp:
              self.dep = pickle.load(fp)
              self.cont = pickle.load(fp)
              self.stop = pickle.load(fp)
