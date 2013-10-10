@@ -1,0 +1,142 @@
+key is ltrap,1,0
+[([<pydecode.hyper.Node object at 0x15aff58>,
+   <pydecode.hyper.Node object at 0x15b1648>],
+  'lconstit,1,1')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9a10>]
+key is lconstit,1,0
+[([<pydecode.hyper.Node object at 0x1598f08>,
+   <pydecode.hyper.Node object at 0x15b1918>],
+  'ltrap,1,0'),
+ ([<pydecode.hyper.Node object at 0x1598f08>,
+   <pydecode.hyper.Node object at 0x15b1918>],
+  'ltrap,1,0')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde98d0>,
+ <pydecode.hyper.Edge object at 0x7f727cde9990>]
+key is lconstit2,1,0
+[([<pydecode.hyper.Node object at 0x15b1918>], 'lconstit2,0,0'),
+ ([<pydecode.hyper.Node object at 0x1598d50>], 'lconstit,1,0')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde99f0>,
+ <pydecode.hyper.Edge object at 0x7f727cde98b0>]
+key is rtrap,0,1
+[([<pydecode.hyper.Node object at 0x15b1fa8>,
+   <pydecode.hyper.Node object at 0x15af8c8>],
+  'rconstit,0,0')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde98b0>]
+key is rconstit,0,1
+[([<pydecode.hyper.Node object at 0x1598e18>,
+   <pydecode.hyper.Node object at 0x15af3a0>],
+  'rtrap,0,1')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9970>]
+key is rconstit2,0,1
+[([<pydecode.hyper.Node object at 0x1598800>], 'rconstit,0,1')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde99b0>]
+key is ltrap,2,1
+[([<pydecode.hyper.Node object at 0x15af1c0>,
+   <pydecode.hyper.Node object at 0x15af3a0>],
+  'lconstit,2,2')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9ab0>]
+key is lconstit,2,1
+[([<pydecode.hyper.Node object at 0x15b4a30>,
+   <pydecode.hyper.Node object at 0x15af8c8>],
+  'ltrap,2,1'),
+ ([<pydecode.hyper.Node object at 0x15b4a30>,
+   <pydecode.hyper.Node object at 0x15af8c8>],
+  'ltrap,2,1')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9a30>,
+ <pydecode.hyper.Edge object at 0x7f727cde9af0>]
+key is lconstit2,2,1
+[([<pydecode.hyper.Node object at 0x15af8c8>], 'lconstit2,1,1'),
+ ([<pydecode.hyper.Node object at 0x15b40a8>], 'lconstit,2,1')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9ad0>,
+ <pydecode.hyper.Edge object at 0x7f727cde9b30>]
+key is rtrap,1,2
+[([<pydecode.hyper.Node object at 0x15afb20>,
+   <pydecode.hyper.Node object at 0x15af580>],
+  'rconstit,1,1')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9b30>]
+key is rconstit,1,2
+[([<pydecode.hyper.Node object at 0x15b4210>,
+   <pydecode.hyper.Node object at 0x15afe68>],
+  'rtrap,1,2')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9b10>]
+key is rconstit2,1,2
+[([<pydecode.hyper.Node object at 0x15b4490>], 'rconstit,1,2')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9b90>]
+key is ltrap,2,0
+[([<pydecode.hyper.Node object at 0x15b40a8>,
+   <pydecode.hyper.Node object at 0x15b1648>],
+  'lconstit,2,1'),
+ ([<pydecode.hyper.Node object at 0x15af1c0>,
+   <pydecode.hyper.Node object at 0x1598918>],
+  'lconstit,2,2')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9b70>,
+ <pydecode.hyper.Edge object at 0x7f727cde9bd0>]
+key is lconstit,2,0
+[([<pydecode.hyper.Node object at 0x15b4760>,
+   <pydecode.hyper.Node object at 0x15b1918>],
+  'ltrap,2,0'),
+ ([<pydecode.hyper.Node object at 0x15b4760>,
+   <pydecode.hyper.Node object at 0x15b1918>],
+  'ltrap,2,0'),
+ ([<pydecode.hyper.Node object at 0x15b4a30>,
+   <pydecode.hyper.Node object at 0x1598fd0>],
+  'ltrap,2,1'),
+ ([<pydecode.hyper.Node object at 0x15b4760>,
+   <pydecode.hyper.Node object at 0x15b1918>],
+  'ltrap,2,0')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9c10>,
+ <pydecode.hyper.Edge object at 0x7f727cde9c30>,
+ <pydecode.hyper.Edge object at 0x7f727cde9c50>,
+ <pydecode.hyper.Edge object at 0x7f727cde9c70>]
+key is lconstit2,2,0
+[([<pydecode.hyper.Node object at 0x15b1918>], 'lconstit2,0,0'),
+ ([<pydecode.hyper.Node object at 0x15b47d8>], 'lconstit,2,0'),
+ ([<pydecode.hyper.Node object at 0x1598fd0>], 'lconstit2,1,0'),
+ ([<pydecode.hyper.Node object at 0x15b47d8>], 'lconstit,2,0')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9c90>,
+ <pydecode.hyper.Edge object at 0x7f727cde9cb0>,
+ <pydecode.hyper.Edge object at 0x7f727cde9cd0>,
+ <pydecode.hyper.Edge object at 0x7f727cde9cf0>]
+key is rtrap,0,2
+[([<pydecode.hyper.Node object at 0x15b1fa8>,
+   <pydecode.hyper.Node object at 0x15b4030>],
+  'rconstit,0,0'),
+ ([<pydecode.hyper.Node object at 0x1598800>,
+   <pydecode.hyper.Node object at 0x15af580>],
+  'rconstit,0,1')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9cd0>,
+ <pydecode.hyper.Edge object at 0x7f727cde9cf0>]
+key is rconstit,0,2
+[([<pydecode.hyper.Node object at 0x1598e18>,
+   <pydecode.hyper.Node object at 0x15b45f8>],
+  'rtrap,0,1'),
+ ([<pydecode.hyper.Node object at 0x15b49b8>,
+   <pydecode.hyper.Node object at 0x15afe68>],
+  'rtrap,0,2')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9d10>,
+ <pydecode.hyper.Edge object at 0x7f727cde9d30>]
+key is rconstit2,0,2
+[([<pydecode.hyper.Node object at 0x15b4aa8>], 'rconstit,0,2'),
+ ([<pydecode.hyper.Node object at 0x15b4aa8>], 'rconstit,0,2')]
+edges are
+[<pydecode.hyper.Edge object at 0x7f727cde9d50>,
+ <pydecode.hyper.Edge object at 0x7f727cde9d70>]
+edges of hypergraph are
+[]
