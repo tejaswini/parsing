@@ -137,7 +137,7 @@ class InsideAlgo:
         return "adj" if (term_beg == term_end) else "non-adj"
 
     def init_all_dicts(self):
-        with open("/home/tejaswini/Columbia/hypergraph_code/initial_values","rb") as fp:
+        with open("data/initial_values","rb") as fp:
              self.dep = pickle.load(fp)
              self.cont = pickle.load(fp)
              self.stop = pickle.load(fp)
