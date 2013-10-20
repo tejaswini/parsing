@@ -39,7 +39,21 @@ def eisners_algo(sentence):
 
 def convert_to_string(array):
    return  ",".join(map(str,array))
-           
+
+def is_adj(pos1,pos2):
+   0 if pos2-pos1==1 else  1
+
+def build_weights(label):
+    head_word,modifier,direct,is_adj,is_cont=label 
+    if(is_cont):
+      return dep[head_word,modifier,direct,is_adj] * cont[head_word,is_adj]
+    # When head word is not empty, it means constit2
+    elif(head_word!=''):
+        return stop[head_word,is_adj]
+    # When the tuple does not have any values, it means trap to constit
+    else:
+      return 1 
+        
 
 eisners_algo("The dog barked")
 pprint.pprint(c)    
