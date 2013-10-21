@@ -65,3 +65,27 @@ def run_inside_algo(hypergraph,weights,chart):
             score += chart[node.id()]
 
     return chart
+
+def outside_algo(hypergraph,weights,inside_chart,chart):
+    # TODO check weights
+    if(len(inside_chart) != len(hypergraph.nodes())):
+        raise HypergraphException("Chart size doesn't match graph")
+    edges = hypergraph.edges()
+
+    for edge in reversed(edges):
+        full_score = weights[edge]
+        for node in edge.tail():
+            full_score += inside_chart[node.id()]
+        head_score = chart[edge.head().id()]
+
+        for node in edge.tail():
+            score= head_score + full_score - inside_chart[node.id()]
+            if(score > chart[node.id()]):
+                chart[node.id()] = score
+
+    bias = weights.bias()
+    for i in xrange(len(chart)):
+        chart[i] +=bias
+    return chart
+        
+        
