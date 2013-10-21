@@ -31,6 +31,25 @@ def run_viterbi(hypergraph,weights,chart):
     
     return chart,back
 
+def get_backpointer(hypergraph,back):
+    to_examine = []
+    path = []
+    to_examine.append(hypergraph.root())
+    while(len(to_examine)!=0):
+        node = to_examine[0]
+        to_examine = to_examine[1:]
+        edge = back[node.id()]
+        if(edge is None):
+            continue
+        path.append(edge)
+        for node in edge.tail():
+            to_examine.append(node)
+    
+    path.sort(key=lambda x:x.id())
+    return ph.Path(hypergraph,path)
+
+
+
 def run_inside_algo(hypergraph,weights,chart):
     chart = []
     
