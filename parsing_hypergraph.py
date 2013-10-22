@@ -42,6 +42,7 @@ def eisners_algo(sentence):
                 c[s,t,'left',0] =  max([c[s,r, 'right', 1] + c[r+1,t,'left',1] for r in range(s,t)])
                 edges = [([nodes[s,r,'right',1],nodes[r+1,t,'left',1]],(words[t],words[s],'left',is_adj(t,s),1)) for r in range(s,t)]
                 nodes[s,t,'left',0] = b.add_node(edges, label=convert_to_string([s,t,'left',0]))
+                
                 c[s,t,'right',0] = max([c[s,r,'right',1] + c[r + 1,t,'left',1] for r in range(s,t)])
                 edges = [([nodes[s,r,'right',1],nodes[r+1,t,'left',1]],(words[s],words[t],'right',is_adj(s,t),1)) for r in range(s,t)]
                 nodes[s,t,'right',0] = b.add_node(edges, label=convert_to_string([s,t,'right',0]))
@@ -50,16 +51,18 @@ def eisners_algo(sentence):
                 c[s,t,'left',1] = max([c[s,r,'left',1] + c[r,t,'left',0] for r in range(s,t)])
                 edges = [([nodes[s,r,'left',1],nodes[r,t,'left',0]],(words[t],words[s],'left',is_adj(t,s),1)) for r in range(s,t)]
                 nodes[s,t,'left',1] = b.add_node(edges,label=convert_to_string([s,t,'left',1]))
+                
                 c[s,t,'right',1] = max([c[s,r,'right',0] + c[r,t,'right',1] for r in range(s+1,t+1)])
                 edges = [([nodes[s,r,'right',0],nodes[r,t,'right',1]],(words[s],words[t],'right',is_adj(s,t),1)) for r in range(s+1,t+1)]
                 nodes[s,t,'right',1] = b.add_node(edges,label=convert_to_string([s,t,'right',1]))
 
                 c[s,t,'left',2] = c[s,t,'left',1]
                 edges = [([nodes[s,r,'left',1]],(words[t],'','left',is_adj(t,s),1)) for r in range(s,t)]
-                nodes[s,t,'left',1] = b.add_node(edges,label=convert_to_string([s,t,'left',1]))
-                c[s,t,'right',1] = max([c[s,r,'right',0] + c[r,t,'right',1] for r in range(s+1,t+1)])
-                edges = [([nodes[s,r,'right',0],nodes[r,t,'right',1]],(words[s],words[t],'right',is_adj(s,t),1)) for r in range(s+1,t+1)]
-                nodes[s,t,'right',1] = b.add_node(edges,label=convert_to_string([s,t,'right',1]))
+                nodes[s,t,'left',2] = b.add_node(edges,label=convert_to_string([s,t,'left',2]))
+                
+                c[s,t,'right',2] = c[s,t,'right',1]
+                edges = [([nodes[s,r,'right',1]],(words[s],'','right',is_adj(s,t),1)) for r in range(s+1,t+1)]
+                nodes[s,t,'right',2] = b.add_node(edges,label=convert_to_string([s,t,'right',2]))
 
             
 
@@ -86,6 +89,11 @@ eisners_algo("A B C")
 pprint.pprint(c)    
 pprint.pprint(hyper1.edges())
 weights = ph.Weights(hyper1,build_weights)
+path,chart = ph.best_path(hyper1, weights)
+
+
+best = weights.dot(path)
+
 
 for edge in hyper1.edges():
     label = hyper1.label(edge)
