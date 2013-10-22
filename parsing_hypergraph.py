@@ -39,20 +39,20 @@ def eisners_algo(sentence):
                     continue
                 print "s is" + str(s) + " t is " + str(t)
                 # First: create incomplete items
-                c[s,t,'left',0] =  max([c[s,r, 'right', 1] + c[r+1,t,'left',1] for r in range(s,t)])
+                c[s,t,'left',0] =  sum([c[s,r, 'right', 1] + c[r+1,t,'left',1] for r in range(s,t)])
                 edges = [([nodes[s,r,'right',1],nodes[r+1,t,'left',1]],(words[t],words[s],'left',is_adj(t,s),1)) for r in range(s,t)]
                 nodes[s,t,'left',0] = b.add_node(edges, label=convert_to_string([s,t,'left',0]))
                 
-                c[s,t,'right',0] = max([c[s,r,'right',1] + c[r + 1,t,'left',1] for r in range(s,t)])
+                c[s,t,'right',0] = sum([c[s,r,'right',1] + c[r + 1,t,'left',1] for r in range(s,t)])
                 edges = [([nodes[s,r,'right',1],nodes[r+1,t,'left',1]],(words[s],words[t],'right',is_adj(s,t),1)) for r in range(s,t)]
                 nodes[s,t,'right',0] = b.add_node(edges, label=convert_to_string([s,t,'right',0]))
 
                 # Second: create complete items
-                c[s,t,'left',1] = max([c[s,r,'left',1] + c[r,t,'left',0] for r in range(s,t)])
+                c[s,t,'left',1] = sum([c[s,r,'left',1] + c[r,t,'left',0] for r in range(s,t)])
                 edges = [([nodes[s,r,'left',1],nodes[r,t,'left',0]],(words[t],words[s],'left',is_adj(t,s),1)) for r in range(s,t)]
                 nodes[s,t,'left',1] = b.add_node(edges,label=convert_to_string([s,t,'left',1]))
                 
-                c[s,t,'right',1] = max([c[s,r,'right',0] + c[r,t,'right',1] for r in range(s+1,t+1)])
+                c[s,t,'right',1] = sum([c[s,r,'right',0] + c[r,t,'right',1] for r in range(s+1,t+1)])
                 edges = [([nodes[s,r,'right',0],nodes[r,t,'right',1]],(words[s],words[t],'right',is_adj(s,t),1)) for r in range(s+1,t+1)]
                 nodes[s,t,'right',1] = b.add_node(edges,label=convert_to_string([s,t,'right',1]))
 
@@ -89,10 +89,13 @@ eisners_algo("A B C")
 pprint.pprint(c)    
 pprint.pprint(hyper1.edges())
 weights = ph.Weights(hyper1,build_weights)
-path,chart = ph.best_path(hyper1, weights)
+#path,chart = ph.best_path(hyper1, weights)
+
+max_marginals = ph.compute_max_marginals(hyper1,weights)
+pprint.pprint(max_marginals)
 
 
-best = weights.dot(path)
+#best = weights.dot(path)
 
 
 for edge in hyper1.edges():
