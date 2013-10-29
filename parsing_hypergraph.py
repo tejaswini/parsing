@@ -123,12 +123,14 @@ class Parsing:
 
     def build_weights(self, arc):
         if(arc.is_cont and arc.modifier_word!=''):
-            return self.dep[arc.head_word, arc.modifier_word, arc.dir, arc.is_adj] \
+            return self.dep[arc.head_word, arc.modifier_word,
+                            arc.dir, arc.is_adj] \
                 * self.cont[arc.head_word, arc.dir, arc.is_adj]
     # When head words is not empty, it means constit2
         elif(arc.is_cont == 0):
             return self.stop[arc.head_word, arc.dir, arc.is_adj]
-    # When the tuple does not have any values, it means trap to constit
+    # When the tuple does not have any values, 
+      #it means trap to constit
         else:
             return 0
 
@@ -136,7 +138,8 @@ class Parsing:
         max_marginals = self.get_marginals()
         for edge in self.hypergraph.edges:
             label = self.hypergraph.label(edge)
-            print self.hypergraph.label(edge), self.build_weights(label)
+            print self.hypergraph.label(edge), \
+                self.build_weights(label)
             print max_marginals[edge]
 
         print "nodes"
