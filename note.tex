@@ -1,0 +1,72 @@
+\documentclass{article}
+
+\title{EM }
+
+% Auctex
+
+\begin{document}
+\date{}
+\maketitle{}
+
+\begin{itemize}
+\item sentence; $w_1 \ldots w_n$
+\item vocabulary; ${\cal W}$
+\item modifier; $m \in \{1 \ldots n\}$
+\item head; $h \in \{0 \ldots n\}$
+\item type; ${\cal T}= \{\textrm{TriStop}, \textrm{Trap},  \textrm{Tri}\}$
+\item direction; ${\cal D}= \{\textrm{L}, \textrm{R}\}$
+\item span; $s \leq t$
+\item marginals $p(type, dir, s, t | w, c)$ where $type \in {\cal T}$ and $dir \in {\cal D}$ and sentence $w$ and counts $v$
+\end{itemize}
+
+
+The probabilities 
+
+\begin{itemize}
+\item $p(\mathrm{CONT} | w, dir, \mathrm{ADJ})$; $\mathrm{CONT} \in \{0, 1\}$,  $w \in {\cal W}$, $\mathrm{ADJ} \in \{0, 1\}$, $dir \in \{0,1\}$
+\item $c(\mathrm{CONT}, w, \mathrm{ADJ})$
+\item $p(u | v, dir, \mathrm{ADJ})$; $\mathrm{CONT} \in \{0, 1\}$,  $u, v \in {\cal W}$, $\mathrm{ADJ} \in \{0, 1\}$
+\item $c(u, v, dir, \mathrm{ADJ})$
+
+\end{itemize}
+
+
+
+Estimation Step
+
+
+Fill in the $c$ charts. 
+
+
+
+ \[c(\mathrm{CONT} = 0, w, dir, \mathrm{ADJ}= 1) \gets 
+  \sum_{s \leq t: |s -t| = 1} p(\mathrm{TriStop}, dir, s, t) \]
+
+ \[c(\mathrm{CONT} = 0, w_s, dir=R, \mathrm{ADJ}= 0) \gets 
+  \sum_{s \leq t: |s -t| > 1} p(\mathrm{TriStop}, dir, s, t) \ \ \ \forall s \in \{1 \ldots n\}\]
+
+\[c(w_t, w_s, dir=R, \mathrm{ADJ}) \gets p(\mathrm{Trap}, R, s, t) \ \ \ \forall s,t \in \{1 \ldots n\} \]
+
+
+Maximization Step
+
+  \[p(\mathrm{CONT} | w, dir, \mathrm{ADJ}) \gets 
+  \frac{c(\mathrm{CONT}, w, dir, \mathrm{ADJ})}{
+    \sum_{m \in {\cal W}} c(m, w, dir, ADJ)}
+  \]
+
+
+
+  \[p(u | v, dir, \mathrm{ADJ}) \gets 
+  \frac{c(u, v, dir, ADJ)}{
+    \sum_{m \in {\cal W}} c(m, v, dir, ADJ)}
+  \]
+
+
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
