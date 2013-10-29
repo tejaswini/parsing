@@ -42,7 +42,7 @@ class Parsing:
                        lambda a: a, chart.HypergraphSemiRing,
                        build_hypergraph=True)
 
-        self.words = sentence.split()
+        self.words = ["*"] + sentence.split()
         self.hypergraph = None
         self.weights = None
 
@@ -109,6 +109,9 @@ class Parsing:
             self.hypergraph = self.c.finish()
         return self.hypergraph
 
+    def get_hypergraph_nodes(self):
+        return self.hypergraph.nodes
+
     def get_weights(self):
         self.get_hypergraph()
         return ph.Weights(self.hypergraph).build(self.build_weights)
@@ -140,6 +143,12 @@ class Parsing:
 
         for node in self.hypergraph.nodes:
             print max_marginals[node]
+
+    def get_node(self, node_name):
+        nodes = self.hypergraph.nodes
+        foo = filter(lambda x:node_name in x.label , nodes)
+        return foo
+
 
     def is_adj(self, pos1, pos2):
         return "adj" if abs(pos2-pos1) == 1 else "non-adj"
