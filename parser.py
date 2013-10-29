@@ -40,7 +40,7 @@ class Parser:
             head_word,modifier = self.get_head_word(direct,span,
                                                     words)
             if(node_type == "trap"):
-                self.counts[node_type,direct,head_word,modifier] += \
+                self.counts[node_type, direct, head_word, modifier] += \
                     marginals[node]
             else:
                 self.counts[node_type,direct,head_word] +=  \
@@ -53,11 +53,31 @@ class Parser:
                 
     def update_parameters(self):
         keys = self.dep.keys()
-        pprint.pprint(keys)
+        # pprint.pprint(keys)
+        # print "counts"
+        # pprint.pprint(self.counts.keys())
+        for key in keys:
+            key = keys[0]
+            values_trap = self.get_values_with_filter(key ,"trap")
+            total_trap = sum(values_trap)
+            if(total_trap == 0):
+                continue
+
+            self.dep[key] = \
+                self.counts[("trap", key[2], key[0], key[1])] / total_trap
+            values_tri_stop = self.get_values_with_filter(key ,"tri")
+            total_tri_stop = sum(values_tri_stop)
+
+            self.cont[key] = total_trap / total_trap + total_tri_stop
+                
+            self.stop[key] = 1 - self.cont[key]
+            
         
 
-    def get_values_with_filter(self, key):
-        map(self.counts.get, filter(lambda k: k, mydict.keys() ) )
+    def get_values_with_filter(self, key, node_type):
+        return map(self.counts.get, filter(lambda k: k[2] == key[0] \
+                   and key[2] == k[1] and k[0] == "trap", 
+                                               self.counts.keys() ) )
         
 
     def get_sentences(self, file_path):
