@@ -28,7 +28,7 @@ class DepType(namedtuple("DepType", ["type", "dir", "head_word",
         return "%s %s %s" % (self.type, self.dir, self.head_word)
 
 
-class Parsing:
+class ParsingAlgo:
 
     def __init__(self, sentence, file_name):
         self.dep, self.cont, self.stop = \
@@ -156,7 +156,7 @@ class Parsing:
     def is_adj(self, pos1, pos2):
         return "adj" if abs(pos2-pos1) == 1 else "non-adj"
 
-sentence = "A B C"
-parsing = Parsing(sentence, "data/initial_values")
-parsing.display()
+# sentence = "A B C"
+# parsing = Parsing(sentence, "data/initial_values")
+# parsing.display()
 #parsing.em_algorithm()
