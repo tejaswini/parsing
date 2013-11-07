@@ -74,8 +74,9 @@ class ParsingAlgo:
                  self.c.sum(
                  [self.c[NodeType(self.Tri, self.Right, (s, r))] *
                  self.c[NodeType(self.Tri, self.Left, (r+1, t))] *
-                 self.c.sr(Arc(self.words[t], self.words[s], self.Left,
-                 self.is_adj(t, s),1)) for r in range(s, t)])
+                 self.c.sr(Arc(self.words[t], self.words[s],
+                    self.Left, self.is_adj(t, s),1))\
+                      for r in range(s, t)])
 
                 self.c[NodeType(self.Trap, self.Right, span)] = \
                    self.c.sum(
@@ -89,18 +90,31 @@ class ParsingAlgo:
                 self.c[NodeType(self.Tri, self.Left, span)] = \
                        self.c.sum([self.c[NodeType(self.Tri,
                        self.Left, (s, r))] *
-                       self.c[NodeType(self.Trap, self.Left, (r, t))] *
-                       self.c.sr(Arc(self.words[t], "", self.Left,
+                       self.c[NodeType(self.Trap, self.Left, (r, t))]\
+                       * self.c.sr(Arc(self.words[t], "", self.Left,
                        self.is_adj(t, s), 1)) for r in range(s, t)])
 
                 self.c[NodeType(self.Tri, self.Right, span)] = \
                      self.c.sum([self.c[NodeType(self.Trap,
-                           self.Right, (s, r))] *
-                           self.c[NodeType(self.Tri, self.Right,
+                          self.Right, (s, r))] *
+                          self.c[NodeType(self.Tri, self.Right,
                                            (r, t))] *
-                           self.c.sr(Arc(self.words[s], "", self.Right,
-                           self.is_adj(t, s), 1))
+                          self.c.sr(Arc(self.words[s], "", self.Right\
+                           ,self.is_adj(t, s), 1))
                            for r in range(s + 1, t + 1)])
+
+                self.c[NodeType(self.TriStop, self.Left, span)] = \
+                       self.c[NodeType(self.Tri,
+                       self.Left, span)] * \
+                       self.c.sr(Arc(self.words[t], "", self.Left,
+                       self.is_adj(t, s), 0))
+
+                self.c[NodeType(self.TriStop, self.Right, span)] = \
+                          self.c[NodeType(self.Tri, self.Right,
+                                           span)] * \
+                          self.c.sr(Arc(self.words[s], "", self.Right,
+                           self.is_adj(t, s), 0))
+
         return self.c        
 
     def get_hypergraph(self):
@@ -114,12 +128,14 @@ class ParsingAlgo:
 
     def get_weights(self):
         self.get_hypergraph()
-        return ph.Weights(self.hypergraph).build(self.build_weights)
+#        return ph.Weights(self.hypergraph).build(self.build_weights)
+        return ph.InsideWeights(self.hypergraph).\
+          build(self.build_weights)
 
     def get_marginals(self):
         weights = self.get_weights()
-        print "got weights"
-        return ph.compute_max_marginals(self.hypergraph, weights)
+#        return ph.compute_max_marginals(self.hypergraph, weights)
+        return ph.compute_marginals(self.hypergraph, weights)
 
     def build_weights(self, arc):
         if(arc.is_cont and arc.modifier_word!=''):
@@ -135,29 +151,34 @@ class ParsingAlgo:
             return 0
 
     def display(self):
-        max_marginals = self.get_marginals()
+        self.get_hypergraph()
+        marginals = self.get_marginals()
+        pprint.pprint(self.hypergraph.root)
+        base = marginals[self.hypergraph.root]
+        print "base is"
+        pprint.pprint(base)
         for edge in self.hypergraph.edges:
+            expected_count =  marginals[edge].value #/ base.value
             label = self.hypergraph.label(edge)
-            print self.hypergraph.label(edge), \
-                self.build_weights(label)
-            print max_marginals[edge]
+            # print self.hypergraph.label(edge), \
+            #      self.build_weights(label)
+            print self.hypergraph.label(edge), expected_count
 
-        print "nodes"
+        # print "nodes"
 
-        for node in self.hypergraph.nodes:
-            print max_marginals[node]
-
+        # for node in self.hypergraph.nodes:
+        #     print max_marginals[node]
+        #     base = marginals[hypergraph.root]
+            
     def get_node(self, node_name):
         nodes = self.hypergraph.nodes
-        foo = filter(lambda x:node_name in x.label , nodes)
-        return foo
-
+        node = filter(lambda x:node_name in x.label , nodes)
+        return node
 
     def is_adj(self, pos1, pos2):
         return "adj" if abs(pos2-pos1) == 1 else "non-adj"
 
-# sentence = "A B C"
-# parsing = Parsing(sentence, "data/initial_values")
-# parsing.display()
-#parsing.em_algorithm()
+sentence = "A B C"
+parsing = ParsingAlgo(sentence, "data/initial_values")
+parsing.display()
 
