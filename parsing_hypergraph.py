@@ -60,7 +60,7 @@ class ParsingAlgo:
         [self.c.init(NodeType(sh, d, (s, s)))
         for s in range(n)
         for d in [self.Right, self.Left]
-        for sh in [self.Trap, self.Tri, self.TripStop]]
+        for sh in [self.Trap, self.Tri, self.TriStop]]
 
         for k in range(1, n):
             for s in range(n):
