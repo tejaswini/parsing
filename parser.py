@@ -8,7 +8,8 @@ class Parser:
     def __init__(self, corpus_path, initial_values_path):
         self.sentences = self.get_sentences(corpus_path)
         self.initial_values_path = initial_values_path
-        self.counts = defaultdict(float)
+        self.cont_counts = defaultdict(float)
+        self.dep_counts = defaultdict(float)
         self.dep, self.cont, self.stop = \
             self.init_all_dicts(initial_values_path)
         
@@ -39,45 +40,39 @@ class Parser:
             span = span.split("-")
             head_word,modifier = self.get_head_word(direct,span,
                                                     words)
+            adj = self.is_adj(int(span[1]), int(span[0]))
             if(node_type == "trap"):
-                self.counts[node_type, direct, head_word, modifier] += \
+                self.dep_counts[head_word, modifier, direct, adj] += \
                     marginals[node]
-            else:
-                self.counts[node_type,direct,head_word] +=  \
+            if(node_type == "triStop"):
+                self.stop_counts[head_word, direct, adj] +=  \
                     marginals[node]
 
-    def get_head_word(self, direct,span,words):
+    def get_head_word(self, direct, span, words):
         if direct=="left" :
             return words[int(span[1])], words[int(span[0])]
         return words[int(span[0])], words[int(span[1])]
                 
     def update_parameters(self):
-        keys = self.dep.keys()
-        # pprint.pprint(keys)
-        # print "counts"
-        # pprint.pprint(self.counts.keys())
+        keys = self.dep_count.keys()
         for key in keys:
-            key = keys[0]
-            values_trap = self.get_values_with_filter(key ,"trap")
+            values_trap = self.get_values_with_filter(key)
             total_trap = sum(values_trap)
             if(total_trap == 0):
                 continue
 
-            self.dep[key] = \
-                self.counts[("trap", key[2], key[0], key[1])] / total_trap
-            values_tri_stop = self.get_values_with_filter(key ,"tri")
-            total_tri_stop = sum(values_tri_stop)
-
-            self.cont[key] = total_trap / total_trap + total_tri_stop
+            self.dep[key] = self.dep_counts[key] / total_trap
+            stop_key = (key[0], key[2], key[3])
+            self.stop[stop_key] = \
+                self.stop_counts[stop_key] / total_trap
                 
-            self.stop[key] = 1 - self.cont[key]
+            self.cont[stop_key] = 1 - self.stop[stop_key]
             
-        
 
-    def get_values_with_filter(self, key, node_type):
-        return map(self.counts.get, filter(lambda k: k[2] == key[0] \
-                   and key[2] == k[1] and k[0] == "trap", 
-                                               self.counts.keys() ) )
+    def get_values_with_filter(self, key):
+        return map(self.dep_counts.get, filter(lambda k: k[0] == key[0] 
+                   and key[2] == k[2] and k[3] == key[3], 
+                                            self.dep_counts.keys()))
         
 
     def get_sentences(self, file_path):
@@ -85,6 +80,10 @@ class Parser:
         with open(file_path,"r") as fp:
             sentences = fp.readlines()
         return sentences
+
+    def is_adj(self, pos1, pos2):
+        return 1 if abs(pos2-pos1) == 1 else 0
+
         
         
     
