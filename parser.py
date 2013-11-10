@@ -8,8 +8,8 @@ class Parser:
     def __init__(self, corpus_path, initial_values_path):
         self.sentences = self.get_sentences(corpus_path)
         self.initial_values_path = initial_values_path
-        self.cont_counts = defaultdict(float)
         self.dep_counts = defaultdict(float)
+        self.stop_counts = defaultdict(float)
         self.dep, self.cont, self.stop = \
             self.init_all_dicts(initial_values_path)
         
@@ -27,10 +27,9 @@ class Parser:
             parsing_algo = ParsingAlgo(sentence,
                                        self.initial_values_path)
             marginals = parsing_algo.get_marginals()
-            nodes = parsing_algo.get_hypergraph_nodes()
+            nodes = parsing_algo.hypergraph.nodes
             self.update_counts(marginals, nodes,
                                ["*"] + sentence.split())
-#            pprint.pprint(self.counts)
 
         self.update_parameters()
 
@@ -42,11 +41,11 @@ class Parser:
                                                     words)
             adj = self.is_adj(int(span[1]), int(span[0]))
             if(node_type == "trap"):
-                self.dep_counts[head_word, modifier, direct, adj] += \
-                    marginals[node]
+                self.dep_counts[head_word, modifier, direct, adj] \
+                    += marginals[node].value
             if(node_type == "triStop"):
                 self.stop_counts[head_word, direct, adj] +=  \
-                    marginals[node]
+                    marginals[node].value
 
     def get_head_word(self, direct, span, words):
         if direct=="left" :
@@ -54,8 +53,7 @@ class Parser:
         return words[int(span[0])], words[int(span[1])]
                 
     def update_parameters(self):
-        keys = self.dep_count.keys()
-        for key in keys:
+        for key in self.dep_counts.keys():
             values_trap = self.get_values_with_filter(key)
             total_trap = sum(values_trap)
             if(total_trap == 0):
@@ -67,7 +65,6 @@ class Parser:
                 self.stop_counts[stop_key] / total_trap
                 
             self.cont[stop_key] = 1 - self.stop[stop_key]
-            
 
     def get_values_with_filter(self, key):
         return map(self.dep_counts.get, filter(lambda k: k[0] == key[0] 
