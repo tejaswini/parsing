@@ -123,18 +123,13 @@ class ParsingAlgo:
             self.hypergraph = self.c.finish()
         return self.hypergraph
 
-    def get_hypergraph_nodes(self):
-        return self.hypergraph.nodes
-
     def get_weights(self):
         self.get_hypergraph()
-#        return ph.Weights(self.hypergraph).build(self.build_weights)
         return ph.InsideWeights(self.hypergraph).\
           build(self.build_weights)
 
     def get_marginals(self):
         weights = self.get_weights()
-#        return ph.compute_max_marginals(self.hypergraph, weights)
         return ph.compute_marginals(self.hypergraph, weights)
 
     def build_weights(self, arc):
@@ -148,28 +143,17 @@ class ParsingAlgo:
     # When the tuple does not have any values, 
       #it means trap to constit
         else:
-            return 0
+            return 1
 
     def display(self):
         self.get_hypergraph()
         marginals = self.get_marginals()
-        pprint.pprint(self.hypergraph.root)
         base = marginals[self.hypergraph.root]
-        print "base is"
-        pprint.pprint(base)
         for edge in self.hypergraph.edges:
-            expected_count =  marginals[edge].value #/ base.value
+            expected_count =  marginals[edge].value / base.value
             label = self.hypergraph.label(edge)
-            # print self.hypergraph.label(edge), \
-            #      self.build_weights(label)
             print self.hypergraph.label(edge), expected_count
 
-        # print "nodes"
-
-        # for node in self.hypergraph.nodes:
-        #     print max_marginals[node]
-        #     base = marginals[hypergraph.root]
-            
     def get_node(self, node_name):
         nodes = self.hypergraph.nodes
         node = filter(lambda x:node_name in x.label , nodes)
@@ -178,7 +162,7 @@ class ParsingAlgo:
     def is_adj(self, pos1, pos2):
         return "adj" if abs(pos2-pos1) == 1 else "non-adj"
 
-sentence = "A B C"
-parsing = ParsingAlgo(sentence, "data/initial_values")
-parsing.display()
-
+if __name__ == "__main__":
+    sentence = "A B C"
+    parsing = ParsingAlgo(sentence, "data/initial_values")
+    parsing.display()
