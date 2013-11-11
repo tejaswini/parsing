@@ -5,6 +5,7 @@ import random
 import pydecode.chart as chart
 import cPickle as pickle
 import pprint
+from pickle_handler import PickleHandler
 
 class NodeType(namedtuple("NodeType", ["type", "dir", "span"])):
 
@@ -31,8 +32,9 @@ class DepType(namedtuple("DepType", ["type", "dir", "head_word",
 class ParsingAlgo:
 
     def __init__(self, sentence, file_name):
+        self.pickle_handler = PickleHandler(file_name)
         self.dep, self.cont, self.stop = \
-            self.init_all_dicts("data/initial_values")
+            self.pickle_handler.init_all_dicts()
         self.Tri = "tri"
         self.Trap = "trap"
         self.TriStop = "triStop"

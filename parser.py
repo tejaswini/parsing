@@ -2,6 +2,7 @@ from parsing_hypergraph import ParsingAlgo
 import pprint
 from collections import defaultdict
 import cPickle as pickle
+from pickle_handler import PickleHandler
 
 class Parser:
 
@@ -10,28 +11,25 @@ class Parser:
         self.initial_values_path = initial_values_path
         self.dep_counts = defaultdict(float)
         self.stop_counts = defaultdict(float)
+        self.pickle_handler = PickleHandler(initial_values_path)
         self.dep, self.cont, self.stop = \
-            self.init_all_dicts(initial_values_path)
-        
-    def init_all_dicts(self, file_name):
-        with open(file_name, "rb") as fp:
-            dep = pickle.load(fp)
-            cont = pickle.load(fp)
-            stop = pickle.load(fp)
+            self.pickle_handler.init_all_dicts()
 
-        return dep, cont, stop
-
-        
     def run_em(self):
-        for sentence in self.sentences:
-            parsing_algo = ParsingAlgo(sentence,
-                                       self.initial_values_path)
-            marginals = parsing_algo.get_marginals()
-            nodes = parsing_algo.hypergraph.nodes
-            self.update_counts(marginals, nodes,
-                               ["*"] + sentence.split())
+        for i in range(100):
+            self.dep_counts = defaultdict(float)
+            self.stop_counts = defaultdict(float)
+            for sentence in self.sentences:
+                parsing_algo = ParsingAlgo(sentence,
+                                           self.initial_values_path)
+                marginals = parsing_algo.get_marginals()
+                nodes = parsing_algo.hypergraph.nodes
+                self.update_counts(marginals, nodes,
+                                   ["*"] + sentence.split())
 
-        self.update_parameters()
+            self.update_parameters()
+            self.pickle_handler.write_to_pickle(self.dep,self.cont,self.stop)
+            
 
     def update_counts(self, marginals, nodes, words):
         for node in nodes:
@@ -47,7 +45,6 @@ class Parser:
             if(node_type == "triStop"):
                 self.stop_counts[head_word, direct, adj] +=  \
                     marginals[node].value
-#                print "head word " + head_word + " marginal values" + str(marginals[node].value)
 
     def get_head_word(self, direct, span, words):
         return (words[int(span[1])], words[int(span[0])]) \
@@ -72,7 +69,6 @@ class Parser:
         return map(self.dep_counts.get, filter(lambda k: k[0] == key[0] 
                    and key[2] == k[2] and k[3] == key[3], 
                                             self.dep_counts.keys()))
-        
 
     def get_sentences(self, file_path):
         sentences = []
@@ -81,10 +77,14 @@ class Parser:
         return sentences
 
     def is_adj(self, pos1, pos2):
-        return 1 if abs(pos2-pos1) == 1 else 0
+        return "adj" if abs(pos2-pos1) == 1 else "non-adj"
 
-        
-        
 if __name__ == "__main__":
     parser = Parser("data/corpus.txt", "data/initial_values")
     parser.run_em()
+    print "stop probalities are"
+    pprint.pprint(parser.stop)
+    print "dep probalities are"
+    pprint.pprint(parser.dep)
+    
+    
