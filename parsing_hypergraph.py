@@ -44,7 +44,6 @@ class ParsingAlgo:
 
         self.words = ["*"] + sentence.split()
         self.hypergraph = None
-        self.weights = None
 
     def init_all_dicts(self, file_name):
         with open(file_name, "rb") as fp:
@@ -57,10 +56,10 @@ class ParsingAlgo:
     def first_order(self):
         n = len(self.words)
     # Add terminal nodes.
-        [self.c.init(NodeType(sh, d, (s, s)))
+        [self.c.init(NodeType(node_type, d, (s, s)))
         for s in range(n)
         for d in [self.Right, self.Left]
-        for sh in [self.Trap, self.Tri, self.TriStop]]
+        for node_type in [self.Tri, self.TriStop]]
 
         for k in range(1, n):
             for s in range(n):
@@ -88,7 +87,7 @@ class ParsingAlgo:
 
             # Second create complete items.
                 self.c[NodeType(self.Tri, self.Left, span)] = \
-                       self.c.sum([self.c[NodeType(self.Tri,
+                       self.c.sum([self.c[NodeType(self.TriStop,
                        self.Left, (s, r))] *
                        self.c[NodeType(self.Trap, self.Left, (r, t))]\
                        * self.c.sr(Arc(self.words[t], "", self.Left,
@@ -97,7 +96,7 @@ class ParsingAlgo:
                 self.c[NodeType(self.Tri, self.Right, span)] = \
                      self.c.sum([self.c[NodeType(self.Trap,
                           self.Right, (s, r))] *
-                          self.c[NodeType(self.Tri, self.Right,
+                          self.c[NodeType(self.TriStop, self.Right,
                                            (r, t))] *
                           self.c.sr(Arc(self.words[s], "", self.Right\
                            ,self.is_adj(t, s), 1))
@@ -154,6 +153,9 @@ class ParsingAlgo:
             label = self.hypergraph.label(edge)
             print self.hypergraph.label(edge), expected_count
 
+        for node in self.hypergraph.nodes:
+            print node.label, marginals[node].value
+
     def get_node(self, node_name):
         nodes = self.hypergraph.nodes
         node = filter(lambda x:node_name in x.label , nodes)
@@ -166,3 +168,4 @@ if __name__ == "__main__":
     sentence = "A B C"
     parsing = ParsingAlgo(sentence, "data/initial_values")
     parsing.display()
+    display.HypergraphFormatter(parsing.hypergraph).to_ipython()
