@@ -37,8 +37,9 @@ class Parser:
         for node in nodes:
             node_type, direct, span = node.label.split()
             span = span.split("-")
-            head_word,modifier = self.get_head_word(direct,span,
+            values  = self.get_head_word(direct,span,
                                                     words)
+            head_word,modifier = values[0],values[1]
             adj = self.is_adj(int(span[1]), int(span[0]))
             if(node_type == "trap"):
                 self.dep_counts[head_word, modifier, direct, adj] \
@@ -46,11 +47,12 @@ class Parser:
             if(node_type == "triStop"):
                 self.stop_counts[head_word, direct, adj] +=  \
                     marginals[node].value
+#                print "head word " + head_word + " marginal values" + str(marginals[node].value)
 
     def get_head_word(self, direct, span, words):
-        if direct=="left" :
-            return words[int(span[1])], words[int(span[0])]
-        return words[int(span[0])], words[int(span[1])]
+        return (words[int(span[1])], words[int(span[0])]) \
+            if direct=="left" else \
+            (words[int(span[0])], words[int(span[1])])
                 
     def update_parameters(self):
         for key in self.dep_counts.keys():
@@ -83,6 +85,6 @@ class Parser:
 
         
         
-    
-parser = Parser("data/corpus.txt", "data/initial_values")
-parser.run_em()
+if __name__ == "__main__":
+    parser = Parser("data/corpus.txt", "data/initial_values")
+    parser.run_em()
