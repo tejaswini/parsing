@@ -11,12 +11,18 @@ class Parser:
         self.initial_values_path = initial_values_path
         self.dep_counts = defaultdict(float)
         self.stop_counts = defaultdict(float)
-        self.pickle_handler = PickleHandler(initial_values_path)
+        self.pickle_handler = PickleHandler(self.initial_values_path)
         self.dep, self.cont, self.stop = \
             self.pickle_handler.init_all_dicts()
+        # as we rewrite the probabilities each time, we use tmp instea\
+        # of the original probabilities
+        self.initial_values_path = "tmp"
+        self.pickle_handler = PickleHandler(self.initial_values_path)
+        self.pickle_handler.write_to_pickle(self.dep,
+                                            self.cont,self.stop)
 
     def run_em(self):
-        for i in range(100):
+        for i in range(30):
             self.dep_counts = defaultdict(float)
             self.stop_counts = defaultdict(float)
             for sentence in self.sentences:
