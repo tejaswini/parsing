@@ -73,7 +73,7 @@ class ParsingAlgo:
             # First create incomplete items.
                 self.c[NodeType(self.Trap, self.Left, span)] = \
                  self.c.sum(
-                 [self.c[NodeType(self.Tri, self.Right, (s, r))] *
+                 [self.c[NodeType(self.TriStop, self.Right, (s, r))] *
                  self.c[NodeType(self.Tri, self.Left, (r+1, t))] *
                  self.c.sr(Arc(self.words[t], self.words[s],
                     self.Left, self.is_adj(t, s),1))\
@@ -82,7 +82,7 @@ class ParsingAlgo:
                 self.c[NodeType(self.Trap, self.Right, span)] = \
                    self.c.sum(
                    [self.c[NodeType(self.Tri, self.Right, (s, r))] *
-                   self.c[NodeType(self.Tri, self.Left, (r+1, t))] *
+                   self.c[NodeType(self.TriStop, self.Left, (r+1, t))] *
                    self.c.sr(Arc(self.words[s], self.words[t],
                    self.Right, self.is_adj(t, s),1))
                    for r in range(s, t)])
