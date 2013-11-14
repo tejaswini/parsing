@@ -46,6 +46,7 @@ class ParsingAlgo:
 
         self.words = ["*"] + sentence.split()
         self.hypergraph = None
+        self.weights = None
 
     def init_all_dicts(self, file_name):
         with open(file_name, "rb") as fp:
@@ -126,12 +127,51 @@ class ParsingAlgo:
 
     def get_weights(self):
         self.get_hypergraph()
-        return ph.InsideWeights(self.hypergraph).\
+        self.weights = ph.InsideWeights(self.hypergraph).\
           build(self.build_weights)
 
+    def viterbi_weights(self):
+        return ph.ViterbiWeights(parsing.hypergraph).\
+            build(parsing.build_weights)
+
+    def best_path(self):
+        viterbi_weights = self.viterbi_weights()
+        return ph.best_path(parsing.hypergraph, viterbi_weights)
+
+    def best_edges(self):
+        path = self.best_path()
+        best_edges = path.edges
+        depen = {}
+        print "best path is"
+        for edge in best_edges:
+            node_type, direct, span =  edge.head.label.split()
+            span_first, span_end = span.split("-")
+            print node_type, direct, span_first, span_end
+            if node_type == "trap" and direct == "right":
+                depen[self.words[int(span_end)]] = \
+                    self.words[int(span_first)]
+                
+            if node_type == "trap" and direct == "left":
+                depen[self.words[int(span_first)]] = \
+                    self.words[int(span_end)]
+
+
+        pprint.pprint(depen)
+
+        actual_tags = []
+
+        for word in self.words:
+            if word not in depen:
+                actual_tags.append(None)
+            else:
+                actual_tags.append(depen[word])
+
+        pprint.pprint(actual_tags)
+
     def get_marginals(self):
-        weights = self.get_weights()
-        return ph.compute_marginals(self.hypergraph, weights)
+        if self.weights== None:
+            self.get_weights()
+        return ph.compute_marginals(self.hypergraph, self.weights)
 
     def build_weights(self, arc):
         if(arc.is_cont and arc.modifier_word!=''):
@@ -167,7 +207,12 @@ class ParsingAlgo:
         return "adj" if abs(pos2-pos1) == 1 else "non-adj"
 
 if __name__ == "__main__":
-    sentence = "A B C"
+#    sentence = "A B C"
+    sentence = "D B C A E"
     parsing = ParsingAlgo(sentence, "data/initial_values")
-    parsing.display()
-    display.HypergraphFormatter(parsing.hypergraph).to_ipython()
+    parsing.get_hypergraph()
+    # parsing.display()
+    # display.HypergraphFormatter(parsing.hypergraph).to_ipython()
+    best = parsing.best_path()
+    parsing.best_edges()
+    
