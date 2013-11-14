@@ -58,23 +58,46 @@ class Parser:
             (words[int(span[0])], words[int(span[1])])
                 
     def update_parameters(self):
+        self.dep = defaultdict(float)
+        self.stop = defaultdict(float)
+        self.cont = defaultdict(float)
         for key in self.dep_counts.keys():
-            values_trap = self.get_values_with_filter(key)
+            values_trap = self.get_values_with_filter(key, self.dep_counts)
             total_trap = sum(values_trap)
             if(total_trap == 0):
                 continue
 
             self.dep[key] = self.dep_counts[key] / total_trap
+
+            assert self.dep[key] <= 1, "%s,%s"%(self.dep_counts[key],total_trap)
+            
+
             stop_key = (key[0], key[2], key[3])
             self.stop[stop_key] = \
-                self.stop_counts[stop_key] / total_trap
+                self.stop_counts[stop_key] / (total_trap + self.stop_counts[stop_key])
+
+            assert self.stop[stop_key] <= 1, "%s,%s"%(self.stop_counts[stop_key],total_trap)
+
+
                 
             self.cont[stop_key] = 1 - self.stop[stop_key]
 
-    def get_values_with_filter(self, key):
-        return map(self.dep_counts.get, filter(lambda k: k[0] == key[0] 
-                   and key[2] == k[2] and k[3] == key[3], 
-                                            self.dep_counts.keys()))
+        for key in self.dep_counts.keys():
+            values_prob = self.get_values_with_filter(key, self.dep)
+            values = self.get_values_with_filter(key, self.dep_counts)
+            total_prob = sum(values_prob)
+            assert total_prob <=1.001, "%s,%s,%s,%s,%s"%(key,total_prob,values,self.dep_counts[key],values_prob)
+
+
+    def get_values_with_filter(self, key, hash_table):
+        # return map(self.dep_counts.get, \
+        #                filter(lambda k: k[0] == key[0] 
+        #                       and key[2] == k[2] and k[3] == key[3], 
+        #                       self.dep_counts.keys()))
+       return [val for key2,val in hash_table.iteritems()
+               if key[0] == key2[0] and key[2] == key2[2]
+                  and key2[3] == key[3]]
+               
 
     def get_sentences(self, file_path):
         sentences = []
