@@ -62,7 +62,7 @@ class ParsingAlgo:
         [self.c.init(NodeType(node_type, d, (s, s)))
         for s in range(n)
         for d in [self.Right, self.Left]
-        for node_type in [self.Tri, self.TriStop]]
+        for node_type in [self.Tri, self.TriStop, self.Trap]]
 
         for k in range(1, n):
             for s in range(n):
@@ -70,6 +70,7 @@ class ParsingAlgo:
                 if t >= n:
                     break
                 span = (s, t)
+#                print span
 
             # First create incomplete items.
                 self.c[NodeType(self.Trap, self.Left, span)] = \
@@ -80,14 +81,18 @@ class ParsingAlgo:
                     self.Left, self.is_adj(t, s),1))\
                       for r in range(s, t)])
 
+
                 self.c[NodeType(self.Trap, self.Right, span)] = \
                    self.c.sum(
                    [self.c[NodeType(self.Tri, self.Right, (s, r))] *
-                   self.c[NodeType(self.TriStop, self.Left, (r+1, t))] *
+                  self.c[NodeType(self.TriStop, self.Left, (r+1, t))] *
                    self.c.sr(Arc(self.words[s], self.words[t],
                    self.Right, self.is_adj(t, s),1))
                    for r in range(s, t)])
 
+                if(span[0] == 0 and span[1] == 1):
+                   pprint.pprint(self.c[NodeType(self.Trap, self.Right, span)])
+               
             # Second create complete items.
                 self.c[NodeType(self.Tri, self.Left, span)] = \
                        self.c.sum([self.c[NodeType(self.TriStop,
@@ -96,8 +101,9 @@ class ParsingAlgo:
                        * self.c.sr(Arc(self.words[t], "", self.Left,
                        self.is_adj(t, s), 1)) for r in range(s, t)])
 
-                self.c[NodeType(self.Tri, self.Right, span)] = \
-                     self.c.sum([self.c[NodeType(self.Trap,
+                if (s == 0 and t == n) or s!=0:
+                    self.c[NodeType(self.Tri, self.Right, span)] = \
+                        self.c.sum([self.c[NodeType(self.Trap,
                           self.Right, (s, r))] *
                           self.c[NodeType(self.TriStop, self.Right,
                                            (r, t))] *
@@ -117,7 +123,7 @@ class ParsingAlgo:
                           self.c.sr(Arc(self.words[s], "", self.Right,
                            self.is_adj(t, s), 0))
 
-        return self.c        
+        return self.c
 
     def get_hypergraph(self):
         if(not self.c._done):
@@ -190,10 +196,10 @@ class ParsingAlgo:
         self.get_hypergraph()
         marginals = self.get_marginals()
         base = marginals[self.hypergraph.root]
-        for edge in self.hypergraph.edges:
-            expected_count =  marginals[edge].value / base.value
-            label = self.hypergraph.label(edge)
-            print self.hypergraph.label(edge), expected_count
+        # for edge in self.hypergraph.edges:
+        #     expected_count =  marginals[edge].value / base.value
+        #     label = self.hypergraph.label(edge)
+        #     print self.hypergraph.label(edge), expected_count
 
         for node in self.hypergraph.nodes:
             print node.label, marginals[node].value
@@ -207,11 +213,11 @@ class ParsingAlgo:
         return "adj" if abs(pos2-pos1) == 1 else "non-adj"
 
 if __name__ == "__main__":
-#    sentence = "A B C"
-    sentence = "D B C A E"
+    sentence = "A B C"
+#    sentence = "D B C A E"
     parsing = ParsingAlgo(sentence, "data/initial_values")
     parsing.get_hypergraph()
-    # parsing.display()
+    parsing.display()
     # display.HypergraphFormatter(parsing.hypergraph).to_ipython()
     best = parsing.best_path()
     parsing.best_edges()
