@@ -7,6 +7,9 @@ import cPickle as pickle
 import pprint
 from pickle_handler import PickleHandler
 
+def default_value():
+        return 0.0000000001
+
 class NodeType(namedtuple("NodeType", ["type", "dir", "span"])):
 
     def __str__(self):
@@ -46,15 +49,7 @@ class ParsingAlgo:
 
         self.words = ["*"] + sentence.split()
         self.hypergraph = None
-        self.weights = None
-
-    def init_all_dicts(self, file_name):
-        with open(file_name, "rb") as fp:
-            dep = pickle.load(fp)
-            cont = pickle.load(fp)
-            stop = pickle.load(fp)
-
-        return dep, cont, stop
+        self.potentials = None
 
     def first_order(self):
         n = len(self.words)
@@ -70,29 +65,35 @@ class ParsingAlgo:
                 if t >= n:
                     break
                 span = (s, t)
-#                print span
 
             # First create incomplete items.
-                self.c[NodeType(self.Trap, self.Left, span)] = \
-                 self.c.sum(
-                 [self.c[NodeType(self.TriStop, self.Right, (s, r))] *
+                nodes = []
+                for r in range(s,t):
+                    if NodeType(self.TriStop, self.Right, (s, r)) \
+                      in self.c and NodeType(self.Tri, self.Left,
+                      (r+1, t)) in self.c:
+                      nodes.append(self.c[NodeType(self.TriStop, self.Right, (s, r))] *
                  self.c[NodeType(self.Tri, self.Left, (r+1, t))] *
                  self.c.sr(Arc(self.words[t], self.words[s],
-                    self.Left, self.is_adj(t, s),1))\
-                      for r in range(s, t)])
+                    self.Left, self.is_adj(t, s),1)))
 
+                self.c[NodeType(self.Trap, self.Left, span)] = \
+                    self.c.sum(nodes)
+
+                nodes = []
+                for r in range(s,t):
+                    if NodeType(self.Tri, self.Right, (s, r)) \
+                      in self.c and NodeType(self.TriStop, self.Left,
+                      (r+1, t)) in self.c:
+                         nodes.append(self.c[NodeType(self.Tri, self.Right, (s, r))] *
+                           self.c[NodeType(self.TriStop, self.Left, (r+1, t))] *
+                            self.c.sr(Arc(self.words[s], self.words[t],
+                            self.Right, self.is_adj(t, s),1)))
+
+                
 
                 self.c[NodeType(self.Trap, self.Right, span)] = \
-                   self.c.sum(
-                   [self.c[NodeType(self.Tri, self.Right, (s, r))] *
-                  self.c[NodeType(self.TriStop, self.Left, (r+1, t))] *
-                   self.c.sr(Arc(self.words[s], self.words[t],
-                   self.Right, self.is_adj(t, s),1))
-                   for r in range(s, t)])
-
-                if(span[0] == 0 and span[1] == 1):
-                   pprint.pprint(self.c[NodeType(self.Trap, self.Right, span)])
-               
+                   self.c.sum(nodes)
             # Second create complete items.
                 self.c[NodeType(self.Tri, self.Left, span)] = \
                        self.c.sum([self.c[NodeType(self.TriStop,
@@ -101,7 +102,7 @@ class ParsingAlgo:
                        * self.c.sr(Arc(self.words[t], "", self.Left,
                        self.is_adj(t, s), 1)) for r in range(s, t)])
 
-                if (s == 0 and t == n) or s!=0:
+                if (s == 0 and t == n-1) or s!=0:
                     self.c[NodeType(self.Tri, self.Right, span)] = \
                         self.c.sum([self.c[NodeType(self.Trap,
                           self.Right, (s, r))] *
@@ -117,7 +118,9 @@ class ParsingAlgo:
                        self.c.sr(Arc(self.words[t], "", self.Left,
                        self.is_adj(t, s), 0))
 
-                self.c[NodeType(self.TriStop, self.Right, span)] = \
+                if(NodeType(self.Tri, self.Right, span) in self.c):
+
+                    self.c[NodeType(self.TriStop, self.Right, span)] = \
                           self.c[NodeType(self.Tri, self.Right,
                                            span)] * \
                           self.c.sr(Arc(self.words[s], "", self.Right,
@@ -131,18 +134,18 @@ class ParsingAlgo:
             self.hypergraph = self.c.finish()
         return self.hypergraph
 
-    def get_weights(self):
+    def get_potentials(self):
         self.get_hypergraph()
-        self.weights = ph.InsideWeights(self.hypergraph).\
-          build(self.build_weights)
+        self.potentials = ph.InsidePotentials(self.hypergraph).\
+          build(self.build_potentials)
 
-    def viterbi_weights(self):
-        return ph.ViterbiWeights(parsing.hypergraph).\
-            build(parsing.build_weights)
+    def viterbi_potentials(self):
+        return ph.ViterbiPotentials(parsing.hypergraph).\
+            build(parsing.build_potentials)
 
     def best_path(self):
-        viterbi_weights = self.viterbi_weights()
-        return ph.best_path(parsing.hypergraph, viterbi_weights)
+        viterbi_potentials = self.viterbi_potentials()
+        return ph.best_path(parsing.hypergraph, viterbi_potentials)
 
     def best_edges(self):
         path = self.best_path()
@@ -150,43 +153,48 @@ class ParsingAlgo:
         depen = {}
         print "best path is"
         for edge in best_edges:
-            node_type, direct, span =  edge.head.label.split()
+            label = str(edge.head.label)
+            node_type, direct, span = label.split()
             span_first, span_end = span.split("-")
             print node_type, direct, span_first, span_end
             if node_type == "trap" and direct == "right":
-                depen[self.words[int(span_end)]] = \
+                depen[self.words[int(span_end)], int(span_end)] = \
                     self.words[int(span_first)]
                 
             if node_type == "trap" and direct == "left":
-                depen[self.words[int(span_first)]] = \
+                depen[self.words[int(span_first)], int(span_first)] = \
                     self.words[int(span_end)]
-
-
-        pprint.pprint(depen)
-
         actual_tags = []
 
-        for word in self.words:
-            if word not in depen:
+        for i,word in enumerate(self.words):
+            if (word, i) not in depen:
                 actual_tags.append(None)
             else:
-                actual_tags.append(depen[word])
+                actual_tags.append(depen[word, i])
 
         pprint.pprint(actual_tags)
 
     def get_marginals(self):
-        if self.weights== None:
-            self.get_weights()
-        return ph.compute_marginals(self.hypergraph, self.weights)
+        if self.potentials== None:
+            self.get_potentials()
+        return ph.compute_marginals(self.hypergraph, self.potentials)
 
-    def build_weights(self, arc):
+    def build_potentials(self, arc):
         if(arc.is_cont and arc.modifier_word!=''):
-            return self.dep[arc.head_word, arc.modifier_word,
+            x =  self.dep[arc.head_word, arc.modifier_word,
                             arc.dir, arc.is_adj] \
                 * self.cont[arc.head_word, arc.dir, arc.is_adj]
+
+ #           assert x > 1.000000123e-300, "%s,%s,%s,%s,%s"%(arc.head_word, arc.modifier_word, arc.dir, self.dep[arc.head_word, arc.modifier_word, arc.dir, arc.is_adj],self.cont[arc.head_word, arc.dir, arc.is_adj]  )
+#            print "cont ", x, arc.head_word, arc.modifier_word, arc.dir
+            return x
     # When head words is not empty, it means constit2
         elif(arc.is_cont == 0):
-            return self.stop[arc.head_word, arc.dir, arc.is_adj]
+            x = self.stop[arc.head_word, arc.dir, arc.is_adj]
+
+#            assert x > 1.000000123e-300, "%s,%s,%s"%(arc.head_word, arc.dir, arc.is_adj)
+#            print "stop " , x, arc.head_word, arc.dir
+            return x
     # When the tuple does not have any values, 
       #it means trap to constit
         else:
@@ -202,7 +210,9 @@ class ParsingAlgo:
         #     print self.hypergraph.label(edge), expected_count
 
         for node in self.hypergraph.nodes:
-            print node.label, marginals[node].value
+            print node.label, marginals[node]#.value
+
+#        self.c.show()
 
     def get_node(self, node_name):
         nodes = self.hypergraph.nodes
@@ -213,12 +223,14 @@ class ParsingAlgo:
         return "adj" if abs(pos2-pos1) == 1 else "non-adj"
 
 if __name__ == "__main__":
-    sentence = "A B C"
-#    sentence = "D B C A E"
-    parsing = ParsingAlgo(sentence, "data/initial_values")
+    sentence = "NNS JJ DT RB VBP RP NNP NN"
+#    sentence =  "A B C E F G"
+#    parsing = ParsingAlgo(sentence, "data/initial_values")
+    parsing = ParsingAlgo(sentence, "tmp") #"data/harmonic_values")
     parsing.get_hypergraph()
     parsing.display()
-    # display.HypergraphFormatter(parsing.hypergraph).to_ipython()
+#    display.HypergraphFormatter(parsing.hypergraph).to_ipython()
     best = parsing.best_path()
+    print sentence
     parsing.best_edges()
     
