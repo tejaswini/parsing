@@ -7,9 +7,6 @@ import cPickle as pickle
 import pprint
 from pickle_handler import PickleHandler
 
-def default_value():
-        return 0.0000000001
-
 class NodeType(namedtuple("NodeType", ["type", "dir", "span"])):
 
     def __str__(self):
@@ -72,7 +69,8 @@ class ParsingAlgo:
                     if NodeType(self.TriStop, self.Right, (s, r)) \
                       in self.c and NodeType(self.Tri, self.Left,
                       (r+1, t)) in self.c:
-                      nodes.append(self.c[NodeType(self.TriStop, self.Right, (s, r))] *
+                      nodes.append(self.c[NodeType(self.TriStop,
+					       self.Right, (s, r))] * \
                  self.c[NodeType(self.Tri, self.Left, (r+1, t))] *
                  self.c.sr(Arc(self.words[t], self.words[s],
                     self.Left, self.is_adj(t, s),1)))
@@ -85,8 +83,10 @@ class ParsingAlgo:
                     if NodeType(self.Tri, self.Right, (s, r)) \
                       in self.c and NodeType(self.TriStop, self.Left,
                       (r+1, t)) in self.c:
-                         nodes.append(self.c[NodeType(self.Tri, self.Right, (s, r))] *
-                           self.c[NodeType(self.TriStop, self.Left, (r+1, t))] *
+                         nodes.append(self.c[NodeType(self.Tri,
+					       self.Right, (s, r))] * \
+                          self.c[NodeType(self.TriStop, self.Left,
+					  (r+1, t))] * \
                             self.c.sr(Arc(self.words[s], self.words[t],
                             self.Right, self.is_adj(t, s),1)))
 
@@ -120,7 +120,7 @@ class ParsingAlgo:
 
                 if(NodeType(self.Tri, self.Right, span) in self.c):
 
-                    self.c[NodeType(self.TriStop, self.Right, span)] = \
+                   self.c[NodeType(self.TriStop, self.Right, span)] = \
                           self.c[NodeType(self.Tri, self.Right,
                                            span)] * \
                           self.c.sr(Arc(self.words[s], "", self.Right,
@@ -136,11 +136,11 @@ class ParsingAlgo:
 
     def get_potentials(self):
         self.get_hypergraph()
-        self.potentials = ph.InsidePotentials(self.hypergraph).\
+        self.potentials = ph.InsidePotentials(self.hypergraph). \
           build(self.build_potentials)
 
     def viterbi_potentials(self):
-        return ph.ViterbiPotentials(parsing.hypergraph).\
+        return ph.ViterbiPotentials(parsing.hypergraph). \
             build(parsing.build_potentials)
 
     def best_path(self):
@@ -177,7 +177,19 @@ class ParsingAlgo:
     def get_marginals(self):
         if self.potentials== None:
             self.get_potentials()
-        return ph.compute_marginals(self.hypergraph, self.potentials)
+        marginal_values = \
+            ph.compute_marginals(self.hypergraph, self.potentials)
+        marginals = {}
+        
+        root_value = marginal_values[self.hypergraph.root]
+        for node in self.hypergraph.nodes:
+            marginals[node.label] = marginal_values[node] / root_value
+
+        for edge in self.hypergraph.edges:
+           marginals[edge.label] =  marginal_values[edge] / root_value
+
+        return marginals
+
 
     def build_potentials(self, arc):
         if(arc.is_cont and arc.modifier_word!=''):
@@ -185,14 +197,14 @@ class ParsingAlgo:
                             arc.dir, arc.is_adj] \
                 * self.cont[arc.head_word, arc.dir, arc.is_adj]
 
- #           assert x > 1.000000123e-300, "%s,%s,%s,%s,%s"%(arc.head_word, arc.modifier_word, arc.dir, self.dep[arc.head_word, arc.modifier_word, arc.dir, arc.is_adj],self.cont[arc.head_word, arc.dir, arc.is_adj]  )
+            assert x > 1.000000123e-300, "%s,%s,%s,%s,%s"%(arc.head_word, arc.modifier_word, arc.dir, self.dep[arc.head_word, arc.modifier_word, arc.dir, arc.is_adj],self.cont[arc.head_word, arc.dir, arc.is_adj])
 #            print "cont ", x, arc.head_word, arc.modifier_word, arc.dir
             return x
     # When head words is not empty, it means constit2
         elif(arc.is_cont == 0):
             x = self.stop[arc.head_word, arc.dir, arc.is_adj]
 
-#            assert x > 1.000000123e-300, "%s,%s,%s"%(arc.head_word, arc.dir, arc.is_adj)
+            assert x > 1.000000123e-300, "%s,%s,%s"%(arc.head_word, arc.dir, arc.is_adj)
 #            print "stop " , x, arc.head_word, arc.dir
             return x
     # When the tuple does not have any values, 
@@ -203,14 +215,14 @@ class ParsingAlgo:
     def display(self):
         self.get_hypergraph()
         marginals = self.get_marginals()
-        base = marginals[self.hypergraph.root]
+#        base = marginals[self.hypergraph.root]
         # for edge in self.hypergraph.edges:
         #     expected_count =  marginals[edge].value / base.value
         #     label = self.hypergraph.label(edge)
         #     print self.hypergraph.label(edge), expected_count
 
         for node in self.hypergraph.nodes:
-            print node.label, marginals[node]#.value
+            print node.label, marginals[node.label]
 
 #        self.c.show()
 
