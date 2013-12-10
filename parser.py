@@ -4,9 +4,6 @@ from collections import defaultdict
 import cPickle as pickle
 from pickle_handler import PickleHandler
 
-def default_value():
-        return 0.0000000001
-
 class Parser:
 
     def __init__(self, corpus_path, initial_values_path):
@@ -25,7 +22,15 @@ class Parser:
                                             self.cont,self.stop)
 
     def run_em(self):
-        for i in range(2):
+        for i in range(10):
+            print "iteration ", i
+            if(i>5):
+                stop_counts = self.stop_counts
+                dep_counts = self.dep_counts
+                with open("params"+str(i), "wb") as fp:
+                    pickle.dump(stop_counts, fp)
+                    pickle.dump(dep_counts, fp)
+
             self.dep_counts = defaultdict(float)
             self.stop_counts = defaultdict(float)
             for sentence in self.sentences:
@@ -37,7 +42,14 @@ class Parser:
                                    ["*"] + sentence.split())
 
             self.update_parameters()
-            self.pickle_handler.write_to_pickle(self.dep,self.cont,self.stop)            
+#            pprint.pprint(self.stop_counts)
+#            pprint.pprint(self.dep_counts)
+            self.pickle_handler.write_to_pickle(self.dep,self.cont,self.stop)
+
+    def display_hash(hash_table):
+        for key,value in hash_table.iteritems():
+            print key,value
+            
 
     def update_counts(self, marginals, nodes, words):
         for node in nodes:
@@ -49,10 +61,10 @@ class Parser:
             adj = self.is_adj(int(span[1]), int(span[0]))
             if(node_type == "trap"):
                 self.dep_counts[head_word, modifier, direct, adj] \
-                    += marginals[node]
+                    += marginals[node.label]
             if(node_type == "triStop"):
                 self.stop_counts[head_word, direct, adj] +=  \
-                    marginals[node]
+                    marginals[node.label]
 
     def get_head_word(self, direct, span, words):
         return (words[int(span[1])], words[int(span[0])]) \
@@ -60,9 +72,9 @@ class Parser:
             (words[int(span[0])], words[int(span[1])])
 
     def update_parameters(self):
-        self.dep = defaultdict(default_value) #defaultdict(float)
-        self.stop = defaultdict(default_value) #defaultdict(float)
-        self.cont = defaultdict(default_value) #defaultdict(float)
+        self.dep = defaultdict(float)
+        self.stop = defaultdict(float)
+        self.cont = defaultdict(float)
         for key in self.dep_counts.keys():
             values_trap = self.get_values_with_filter(key, self.dep_counts)
             total_trap = sum(values_trap)
@@ -71,9 +83,9 @@ class Parser:
                 continue
 
             self.dep[key] = self.dep_counts[key] / total_trap
-            if(key == ('DT', 'NNS', 'left', 'non-adj')):
-                print "total_trap", total_trap
-                print "dep",self.dep[key],"dep_counts",self.dep_counts[key]
+            # if(key == ('DT', 'NNS', 'left', 'non-adj')):
+            #     print "total_trap", total_trap
+            #     print "dep",self.dep[key],"dep_counts",self.dep_counts[key]
 
             assert self.dep[key] <= 1, "%s,%s"%(self.dep_counts[key],total_trap)
 
@@ -81,9 +93,9 @@ class Parser:
             self.stop[stop_key] = \
                 self.stop_counts[stop_key] / (total_trap + self.stop_counts[stop_key])
 
-            if(stop_key == ('DT', 'left', 'non-adj')):
-                print "stop value", self.stop[stop_key]
-                print "stop count",self.stop_counts[stop_key],"denom", (total_trap + self.stop_counts[stop_key])
+            # if(stop_key == ('DT', 'left', 'non-adj')):
+            #     print "stop value", self.stop[stop_key]
+            #     print "stop count",self.stop_counts[stop_key],"denom", (total_trap + self.stop_counts[stop_key])
 
             assert self.stop[stop_key] <= 1, "%s,%s"%(self.stop_counts[stop_key],total_trap)
 
@@ -96,7 +108,6 @@ class Parser:
             values = self.get_values_with_filter(key, self.dep_counts)
             total_prob = sum(values_prob)
             assert total_prob <=1.001, "%s,%s,%s,%s,%s"%(key,total_prob,values,self.dep_counts[key],values_prob)
-
 
     def get_values_with_filter(self, key, hash_table):
        return [val for key2,val in hash_table.iteritems()
@@ -116,9 +127,9 @@ class Parser:
 if __name__ == "__main__":
     parser = Parser("data/corpus.txt", "data/harmonic_values") #"data/initial_values")
     parser.run_em()
-    print "stop probalities are"
-    pprint.pprint(parser.stop)
-    print "stop probalities are"
-    pprint.pprint(parser.cont)
-    print "dep probalities are"
-    pprint.pprint(parser.dep)
+    # print "stop probalities are"
+    # pprint.pprint(parser.stop)
+    # print "stop probalities are"
+    # pprint.pprint(parser.cont)
+    # print "dep probalities are"
+    # pprint.pprint(parser.dep)
