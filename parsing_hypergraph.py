@@ -31,10 +31,10 @@ class DepType(namedtuple("DepType", ["type", "dir", "head_word",
 
 class ParsingAlgo:
 
-    def __init__(self, sentence, file_name):
-        self.pickle_handler = PickleHandler(file_name)
-        self.dep, self.cont, self.stop = \
-            self.pickle_handler.init_all_dicts()
+    def __init__(self, sentence, dep, stop, cont):#file_name):
+	self.dep = dep
+	self.stop = stop
+	self.cont = cont
         self.Tri = "tri"
         self.Trap = "trap"
         self.TriStop = "triStop"
@@ -47,6 +47,7 @@ class ParsingAlgo:
         self.words = ["*"] + sentence.split()
         self.hypergraph = None
         self.potentials = None
+	self.total_potentials = None
 
     def first_order(self):
         n = len(self.words)
@@ -136,8 +137,8 @@ class ParsingAlgo:
 
     def get_potentials(self):
         self.get_hypergraph()
-        self.potentials = ph.InsidePotentials(self.hypergraph). \
-          build(self.build_potentials)
+        self.potentials =  ph.InsidePotentials(self.hypergraph). \
+           build(self.build_potentials)
 
     def viterbi_potentials(self):
         return ph.ViterbiPotentials(parsing.hypergraph). \
@@ -175,13 +176,16 @@ class ParsingAlgo:
         pprint.pprint(actual_tags)
 
     def get_marginals(self):
-        if self.potentials== None:
+        if self.potentials == None:
             self.get_potentials()
         marginal_values = \
             ph.compute_marginals(self.hypergraph, self.potentials)
         marginals = {}
-        
-        root_value = marginal_values[self.hypergraph.root]
+
+	if(self.total_potentials == None):
+		self.sum_potentials()
+        root_value = self.total_potentials
+
         for node in self.hypergraph.nodes:
             marginals[node.label] = marginal_values[node] / root_value
 
@@ -190,23 +194,22 @@ class ParsingAlgo:
 
         return marginals
 
-
+    def sum_potentials(self):
+	if(self.potentials == None):
+           self.get_potentials()
+	chart =  ph.inside(self.hypergraph, self.potentials)
+	self.total_potentials = chart[self.hypergraph.root]
+	    
     def build_potentials(self, arc):
         if(arc.is_cont and arc.modifier_word!=''):
-            x =  self.dep[arc.head_word, arc.modifier_word,
+            return self.dep[arc.head_word, arc.modifier_word,
                             arc.dir, arc.is_adj] \
                 * self.cont[arc.head_word, arc.dir, arc.is_adj]
 
-            assert x > 1.000000123e-300, "%s,%s,%s,%s,%s"%(arc.head_word, arc.modifier_word, arc.dir, self.dep[arc.head_word, arc.modifier_word, arc.dir, arc.is_adj],self.cont[arc.head_word, arc.dir, arc.is_adj])
-#            print "cont ", x, arc.head_word, arc.modifier_word, arc.dir
-            return x
     # When head words is not empty, it means constit2
         elif(arc.is_cont == 0):
-            x = self.stop[arc.head_word, arc.dir, arc.is_adj]
+            return self.stop[arc.head_word, arc.dir, arc.is_adj]
 
-            assert x > 1.000000123e-300, "%s,%s,%s"%(arc.head_word, arc.dir, arc.is_adj)
-#            print "stop " , x, arc.head_word, arc.dir
-            return x
     # When the tuple does not have any values, 
       #it means trap to constit
         else:
@@ -235,10 +238,10 @@ class ParsingAlgo:
         return "adj" if abs(pos2-pos1) == 1 else "non-adj"
 
 if __name__ == "__main__":
-    sentence = "NNS JJ DT RB VBP RP NNP NN"
-#    sentence =  "A B C E F G"
-#    parsing = ParsingAlgo(sentence, "data/initial_values")
-    parsing = ParsingAlgo(sentence, "tmp") #"data/harmonic_values")
+    sentence = "JJ NN NNS VBP RB JJ NNS"
+    pickle_handler = PickleHandler("tmp")
+    dep, cont, stop = pickle_handler.init_all_dicts()
+    parsing = ParsingAlgo(sentence, dep, stop, cont)
     parsing.get_hypergraph()
     parsing.display()
 #    display.HypergraphFormatter(parsing.hypergraph).to_ipython()
