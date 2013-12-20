@@ -31,7 +31,7 @@ class DepType(namedtuple("DepType", ["type", "dir", "head_word",
 
 class ParsingAlgo:
 
-    def __init__(self, sentence, dep, stop, cont):#file_name):
+    def __init__(self, sentence, dep, stop, cont):
 	self.dep = dep
 	self.stop = stop
 	self.cont = cont
@@ -51,6 +51,8 @@ class ParsingAlgo:
 
     def first_order(self):
         n = len(self.words)
+        print "sentence is "
+        pprint.pprint(self.words)
     # Add terminal nodes.
         [self.c.init(NodeType(node_type, d, (s, s)))
         for s in range(n)
@@ -141,12 +143,13 @@ class ParsingAlgo:
            build(self.build_potentials)
 
     def viterbi_potentials(self):
-        return ph.ViterbiPotentials(parsing.hypergraph). \
-            build(parsing.build_potentials)
+        self.get_hypergraph()
+        return ph.ViterbiPotentials(self.hypergraph). \
+            build(self.build_potentials)
 
     def best_path(self):
         viterbi_potentials = self.viterbi_potentials()
-        return ph.best_path(parsing.hypergraph, viterbi_potentials)
+        return ph.best_path(self.hypergraph, viterbi_potentials)
 
     def best_edges(self):
         path = self.best_path()
@@ -160,20 +163,13 @@ class ParsingAlgo:
             print node_type, direct, span_first, span_end
             if node_type == "trap" and direct == "right":
                 depen[self.words[int(span_end)], int(span_end)] = \
-                    self.words[int(span_first)]
+                    (self.words[int(span_first)], span_first) 
                 
             if node_type == "trap" and direct == "left":
                 depen[self.words[int(span_first)], int(span_first)] = \
-                    self.words[int(span_end)]
-        actual_tags = []
-
-        for i,word in enumerate(self.words):
-            if (word, i) not in depen:
-                actual_tags.append(None)
-            else:
-                actual_tags.append(depen[word, i])
-
-        pprint.pprint(actual_tags)
+                    (self.words[int(span_end)], span_end)
+        pprint.pprint(depen)
+        return depen
 
     def get_marginals(self):
         if self.potentials == None:
@@ -202,9 +198,13 @@ class ParsingAlgo:
 	    
     def build_potentials(self, arc):
         if(arc.is_cont and arc.modifier_word!=''):
-            return self.dep[arc.head_word, arc.modifier_word,
-                            arc.dir, arc.is_adj] \
+            x = self.dep[arc.head_word, arc.modifier_word,
+                            arc.dir] \
                 * self.cont[arc.head_word, arc.dir, arc.is_adj]
+            if(x ==0):
+                 print arc.head_word, arc.modifier_word, self.dep[arc.head_word, arc.modifier_word,
+                            arc.dir], self.cont[arc.head_word, arc.dir, arc.is_adj]
+            return x
 
     # When head words is not empty, it means constit2
         elif(arc.is_cont == 0):
@@ -239,10 +239,10 @@ class ParsingAlgo:
 
 if __name__ == "__main__":
     sentence = "JJ NN NNS VBP RB JJ NNS"
-    pickle_handler = PickleHandler("tmp")
+    pickle_handler = PickleHandler("data/harmonic_values")
     dep, cont, stop = pickle_handler.init_all_dicts()
     parsing = ParsingAlgo(sentence, dep, stop, cont)
-    parsing.get_hypergraph()
+#    parsing.get_hypergraph()
     parsing.display()
 #    display.HypergraphFormatter(parsing.hypergraph).to_ipython()
     best = parsing.best_path()
