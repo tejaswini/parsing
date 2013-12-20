@@ -23,6 +23,8 @@ class Parser:
         for i in range(10):
             print "iteration ", i
             for sentence in self.sentences:
+                if(sentence.strip() == ""):
+                    continue
                 parsing_algo = ParsingAlgo(sentence,
 				       self.dep, self.stop, self.cont)
                 marginals = parsing_algo.get_marginals()
@@ -56,11 +58,12 @@ class Parser:
             adj = self.is_adj(int(span[1]), int(span[0]))
             if(node_type == "trap"):
                 self.dep_multinomial_holder.inc_counts((head_word,
-		   modifier, direct, adj), marginals[node.label])
+		   modifier, direct), (head_word, direct), marginals[node.label])
 		
             if(node_type == "triStop"):
                 self.stop_multinomial_holder.inc_counts((head_word,
-		   direct, adj), marginals[node.label])
+		   direct, adj), (head_word,direct, adj),
+                                  marginals[node.label])
 
     def get_head_word(self, direct, span, words):
         return (words[int(span[1])], words[int(span[0])]) \
