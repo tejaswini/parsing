@@ -6,6 +6,8 @@ import pydecode.chart as chart
 import cPickle as pickle
 import pprint
 from pickle_handler import PickleHandler
+from memory_profiler import profile
+import sys
 
 class NodeType(namedtuple("NodeType", ["type", "dir", "span"])):
 
@@ -49,18 +51,18 @@ class ParsingAlgo:
         self.potentials = None
 	self.total_potentials = None
 
+    @profile
+
     def first_order(self):
         n = len(self.words)
-        print "sentence is "
-        pprint.pprint(self.words)
     # Add terminal nodes.
         [self.c.init(NodeType(node_type, d, (s, s)))
-        for s in range(n)
+        for s in xrange(n)
         for d in [self.Right, self.Left]
         for node_type in [self.Tri, self.TriStop, self.Trap]]
 
-        for k in range(1, n):
-            for s in range(n):
+        for k in xrange(1, n):
+            for s in xrange(n):
                 t = k + s
                 if t >= n:
                     break
@@ -68,7 +70,8 @@ class ParsingAlgo:
 
             # First create incomplete items.
                 nodes = []
-                for r in range(s,t):
+                        
+                for r in xrange(s,t):
                     if NodeType(self.TriStop, self.Right, (s, r)) \
                       in self.c and NodeType(self.Tri, self.Left,
                       (r+1, t)) in self.c:
@@ -82,7 +85,7 @@ class ParsingAlgo:
                     self.c.sum(nodes)
 
                 nodes = []
-                for r in range(s,t):
+                for r in xrange(s,t):
                     if NodeType(self.Tri, self.Right, (s, r)) \
                       in self.c and NodeType(self.TriStop, self.Left,
                       (r+1, t)) in self.c:
@@ -131,6 +134,7 @@ class ParsingAlgo:
 
         return self.c
 
+
     def get_hypergraph(self):
         if(not self.c._done):
             self.first_order()
@@ -155,12 +159,12 @@ class ParsingAlgo:
         path = self.best_path()
         best_edges = path.edges
         depen = {}
-        print "best path is"
+#        print "best path is"
         for edge in best_edges:
             label = str(edge.head.label)
             node_type, direct, span = label.split()
             span_first, span_end = span.split("-")
-            print node_type, direct, span_first, span_end
+#            print node_type, direct, span_first, span_end
             if node_type == "trap" and direct == "right":
                 depen[self.words[int(span_end)], int(span_end)] = \
                     (self.words[int(span_first)], span_first) 
@@ -168,7 +172,6 @@ class ParsingAlgo:
             if node_type == "trap" and direct == "left":
                 depen[self.words[int(span_first)], int(span_first)] = \
                     (self.words[int(span_end)], span_end)
-        pprint.pprint(depen)
         return depen
 
     def get_marginals(self):
@@ -190,6 +193,7 @@ class ParsingAlgo:
 
         return marginals
 
+
     def sum_potentials(self):
 	if(self.potentials == None):
            self.get_potentials()
@@ -198,12 +202,12 @@ class ParsingAlgo:
 	    
     def build_potentials(self, arc):
         if(arc.is_cont and arc.modifier_word!=''):
-            x = self.dep[arc.head_word, arc.modifier_word,
+            x =  self.dep[arc.head_word, arc.modifier_word,
                             arc.dir] \
                 * self.cont[arc.head_word, arc.dir, arc.is_adj]
-            if(x ==0):
-                 print arc.head_word, arc.modifier_word, self.dep[arc.head_word, arc.modifier_word,
-                            arc.dir], self.cont[arc.head_word, arc.dir, arc.is_adj]
+            # if(x == 0):
+            #     print self.dep[arc.head_word, arc.modifier_word,
+            #                 arc.dir], arc.head_word, arc.modifier_word
             return x
 
     # When head words is not empty, it means constit2
@@ -218,11 +222,6 @@ class ParsingAlgo:
     def display(self):
         self.get_hypergraph()
         marginals = self.get_marginals()
-#        base = marginals[self.hypergraph.root]
-        # for edge in self.hypergraph.edges:
-        #     expected_count =  marginals[edge].value / base.value
-        #     label = self.hypergraph.label(edge)
-        #     print self.hypergraph.label(edge), expected_count
 
         for node in self.hypergraph.nodes:
             print node.label, marginals[node.label]
@@ -238,14 +237,13 @@ class ParsingAlgo:
         return "adj" if abs(pos2-pos1) == 1 else "non-adj"
 
 if __name__ == "__main__":
-    sentence = "JJ NN NNS VBP RB JJ NNS"
+    sentence = "PRP IN TO VB IN NN VBZ"
     pickle_handler = PickleHandler("data/harmonic_values")
     dep, cont, stop = pickle_handler.init_all_dicts()
     parsing = ParsingAlgo(sentence, dep, stop, cont)
 #    parsing.get_hypergraph()
-    parsing.display()
+#    parsing.display()
 #    display.HypergraphFormatter(parsing.hypergraph).to_ipython()
-    best = parsing.best_path()
     print sentence
-    parsing.best_edges()
-    
+    depen = parsing.first_order()#best_edges()
+#    pprint.pprint(depen)
