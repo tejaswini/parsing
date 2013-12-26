@@ -50,8 +50,8 @@ class ParsingAlgo:
         self.hypergraph = None
         self.potentials = None
 	self.total_potentials = None
+        self.first_child = {}
 
-    @profile
 
     def first_order(self):
         n = len(self.words)
@@ -79,10 +79,13 @@ class ParsingAlgo:
 					       self.Right, (s, r))] * \
                  self.c[NodeType(self.Tri, self.Left, (r+1, t))] *
                  self.c.sr(Arc(self.words[t], self.words[s],
-                    self.Left, self.is_adj(t, s),1)))
+                    self.Left, self.is_adj(t, s), 1)))
 
                 self.c[NodeType(self.Trap, self.Left, span)] = \
                     self.c.sum(nodes)
+
+                self.track_child(t, s)
+                
 
                 nodes = []
                 for r in xrange(s,t):
@@ -94,12 +97,15 @@ class ParsingAlgo:
                           self.c[NodeType(self.TriStop, self.Left,
 					  (r+1, t))] * \
                             self.c.sr(Arc(self.words[s], self.words[t],
-                            self.Right, self.is_adj(t, s),1)))
+                            self.Right, self.is_adj(s, t), 1)))
 
                 
 
                 self.c[NodeType(self.Trap, self.Right, span)] = \
                    self.c.sum(nodes)
+
+                self.track_child(s, t)
+                
             # Second create complete items.
                 self.c[NodeType(self.Tri, self.Left, span)] = \
                        self.c.sum([self.c[NodeType(self.TriStop,
@@ -108,6 +114,8 @@ class ParsingAlgo:
                        * self.c.sr(Arc(self.words[t], "", self.Left,
                        self.is_adj(t, s), 1)) for r in range(s, t)])
 
+                self.track_child(t, s)
+
                 if (s == 0 and t == n-1) or s!=0:
                     self.c[NodeType(self.Tri, self.Right, span)] = \
                         self.c.sum([self.c[NodeType(self.Trap,
@@ -115,8 +123,10 @@ class ParsingAlgo:
                           self.c[NodeType(self.TriStop, self.Right,
                                            (r, t))] *
                           self.c.sr(Arc(self.words[s], "", self.Right\
-                           ,self.is_adj(t, s), 1))
+                           ,self.is_adj(s, t), 1))
                            for r in range(s + 1, t + 1)])
+
+                    self.track_child(s, t)
 
                 self.c[NodeType(self.TriStop, self.Left, span)] = \
                        self.c[NodeType(self.Tri,
@@ -124,16 +134,20 @@ class ParsingAlgo:
                        self.c.sr(Arc(self.words[t], "", self.Left,
                        self.is_adj(t, s), 0))
 
+
                 if(NodeType(self.Tri, self.Right, span) in self.c):
 
                    self.c[NodeType(self.TriStop, self.Right, span)] = \
                           self.c[NodeType(self.Tri, self.Right,
                                            span)] * \
                           self.c.sr(Arc(self.words[s], "", self.Right,
-                           self.is_adj(t, s), 0))
+                           self.is_adj(s, t), 0))
 
         return self.c
 
+    def track_child(self, parent, child):
+        if(parent not in self.first_child.keys()):
+            self.first_child[parent] = child
 
     def get_hypergraph(self):
         if(not self.c._done):
@@ -228,22 +242,21 @@ class ParsingAlgo:
 
 #        self.c.show()
 
-    def get_node(self, node_name):
-        nodes = self.hypergraph.nodes
-        node = filter(lambda x:node_name in x.label , nodes)
-        return node
-
-    def is_adj(self, pos1, pos2):
-        return "adj" if abs(pos2-pos1) == 1 else "non-adj"
+    def is_adj(self, parent, child):
+        if parent in self.first_child.keys() and \
+                self.first_child[parent] == child :
+            return "adj" 
+        else:
+            return "non-adj"
 
 if __name__ == "__main__":
     sentence = "PRP IN TO VB IN NN VBZ"
     pickle_handler = PickleHandler("data/harmonic_values")
     dep, cont, stop = pickle_handler.init_all_dicts()
     parsing = ParsingAlgo(sentence, dep, stop, cont)
-#    parsing.get_hypergraph()
+    parsing.get_hypergraph()
 #    parsing.display()
 #    display.HypergraphFormatter(parsing.hypergraph).to_ipython()
-    print sentence
-    depen = parsing.first_order()#best_edges()
-#    pprint.pprint(depen)
+    print sentence 
+    depen = parsing.best_edges()
+    pprint.pprint(depen)
