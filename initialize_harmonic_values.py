@@ -30,14 +30,14 @@ class InitDict:
             if "root" in sent:
                 self.root_creator.add_entry(sent)
         # * needs Cont values
-        self.cont_creator.prob["*", "left", "adj"] = 0.0001
-        self.cont_creator.prob["*", "left", "non-adj"] = 0.0001
-        self.cont_creator.prob["*", "right", "adj"] = 0.9999
-        self.cont_creator.prob["*", "right", "non-adj"] = 0.0001
-        self.stop_creator.prob["*", "left", "adj"] = 0.9999
-        self.stop_creator.prob["*", "left", "adj"] = 0.9999
-        self.stop_creator.prob["*", "right", "adj"] = 0.0001
-        self.stop_creator.prob["*", "right", "non-adj"] = 0.9999
+        self.cont_creator.prob["*", "left", "adj"] = 0.1
+        self.cont_creator.prob["*", "left", "non-adj"] = 0.1
+        self.cont_creator.prob["*", "right", "adj"] = 0.9
+        self.cont_creator.prob["*", "right", "non-adj"] = 0.1
+        self.stop_creator.prob["*", "left", "adj"] = 0.9
+        self.stop_creator.prob["*", "left", "adj"] = 0.9
+        self.stop_creator.prob["*", "right", "adj"] = 0.1
+        self.stop_creator.prob["*", "right", "non-adj"] = 0.9
         
 
 if __name__ == "__main__":

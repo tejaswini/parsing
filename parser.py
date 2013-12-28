@@ -13,8 +13,6 @@ class Parser:
         self.pickle_handler = PickleHandler(self.initial_values_path)
         self.dep, self.cont, self.stop = \
             self.pickle_handler.init_all_dicts()
-        # as we rewrite the probabilities each time, we use tmp instea\
-        # of the original probabilities
  	self.multinomial_holder = MultinomialHolder()
 
     def run_em(self):
@@ -36,15 +34,13 @@ class Parser:
                 "The prob are %r, %r"% (sum_probs[i],  sum_probs[i-1])
 
             self.update_parameters()
+            
 	    self.append_dicts(self.dep,
-			    self.multinomial_holder.dep_mult_list,
-                              "prob")
+		   self.multinomial_holder.dep_mult_list, "prob")
 	    self.append_dicts(self.stop,
-			  self.multinomial_holder.stop_mult_list,
-                              "stop_prob")
+		   self.multinomial_holder.stop_mult_list, "stop_prob")
             self.append_dicts(self.cont,
-                              self.multinomial_holder.stop_mult_list,
-                              "cont_prob")
+                   self.multinomial_holder.stop_mult_list, "cont_prob")
 
             self.multinomial_holder = MultinomialHolder()
 
@@ -53,7 +49,7 @@ class Parser:
 	pprint.pprint(sum_probs)
 
     def update_counts(self, marginals, edges):
-        # state var indicates if head word is taking more children (1)\
+        # state var indicates if head word is taking more children (1)
             # or stopped taking children (0)
         for edge in edges:
             head_word, mod_word, direct, adj, state = \
@@ -71,12 +67,17 @@ class Parser:
 
     def update_parameters(self):
 	self.multinomial_holder.estimate()
+        self.dep = defaultdict(float)
+        self.stop = defaultdict(float)
+        self.cont = defaultdict(float)
+
 
     def append_dicts(self, hash_table, mult_list, dict_name):
         for key, multinomial in  \
 	    mult_list.iteritems():
     		for prob_key, value in eval("multinomial."+ \
                                     dict_name + ".iteritems()"):
+                    
 			hash_table[prob_key] = value
 		
     def get_sentences(self, file_path):

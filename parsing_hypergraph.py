@@ -222,9 +222,11 @@ class ParsingAlgo:
             x =  self.dep[arc.head_word, arc.modifier_word,
                             arc.dir] \
                 * self.cont[arc.head_word, arc.dir, arc.is_adj]
-            # if(x == 0):
-            #      print self.dep[arc.head_word, arc.modifier_word,
-            #                  arc.dir], arc.head_word, arc.modifier_word
+            if(x == 0):
+                 print "dep arc is 0"
+                 print self.dep[arc.head_word, arc.modifier_word, \
+                   arc.dir], arc.head_word, arc.modifier_word, \
+                 self.cont[arc.head_word, arc.dir, arc.is_adj]
             return x
 
     # When head words is not empty, it means constit2
@@ -250,7 +252,7 @@ class ParsingAlgo:
 
 
 if __name__ == "__main__":
-    sentence = "WP VBZ JJ ."
+    sentence = "NNP NNP VBZ NNP ."
     pickle_handler = PickleHandler("data/harmonic_values_all")
     dep, cont, stop = pickle_handler.init_all_dicts()
     parsing = ParsingAlgo(sentence, dep, stop, cont)

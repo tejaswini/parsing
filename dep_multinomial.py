@@ -12,7 +12,6 @@ class DepMultinomial:
         self.total += counts
 
     def estimate(self):
-        self.prob = defaultdict(float)
         if(self.total == 0):
            self.counts = defaultdict(float)
            return

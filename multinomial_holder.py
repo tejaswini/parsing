@@ -1,6 +1,7 @@
 from dep_multinomial import DepMultinomial
 from cont_stop_multinomial import StopContMultinomial
 from memory_profiler import profile
+import pprint
 
 class MultinomialHolder:
 
@@ -36,6 +37,7 @@ class MultinomialHolder:
 
     def estimate_dep(self):
         for key in self.dep_mult_list.keys():
+            print key
             self.dep_mult_list[key].estimate()
 
         for key in self.dep_mult_list_adj.keys():
@@ -44,6 +46,21 @@ class MultinomialHolder:
     def estimate_stop(self):
         for key in self.stop_mult_list.keys():
             dep_total = 0
+
             if(key in self.dep_mult_list_adj):
                 dep_total = self.dep_mult_list_adj[key].total
+
             self.stop_mult_list[key].estimate(dep_total)
+
+        #A key might not be found in stop, but might have cont.
+        # In this case, cont =1 and stop =0
+
+        keys = list(set(self.dep_mult_list_adj.keys()) - \
+                 set(self.stop_mult_list.keys()))
+
+        for key in keys:
+            self.stop_mult_list[key] = StopContMultinomial()
+            self.stop_mult_list[key].inc_counts(key, 0)
+            self.stop_mult_list[key].\
+                estimate(self.dep_mult_list_adj[key].total)
+            self.stop_mult_list[key].cont_prob

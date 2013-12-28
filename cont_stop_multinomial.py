@@ -15,11 +15,8 @@ class StopContMultinomial:
     def estimate(self, dep_total):
         self.stop_prob = defaultdict(float)
         self.cont_prob = defaultdict(float)
-        if(self.total == 0):
-           self.stop_counts = defaultdict(float)
-           return
         denom = self.total + dep_total
-        
+
         for instance in self.stop_counts.keys():
           self.stop_prob[instance] = self.stop_counts[instance] / denom
 
