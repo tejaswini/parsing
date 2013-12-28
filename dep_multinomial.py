@@ -1,6 +1,7 @@
 from collections import defaultdict
 
-class Multinomial:
+class DepMultinomial:
+
     def __init__(self):
         self.prob = defaultdict(float)
         self.counts = defaultdict(float)
@@ -18,7 +19,3 @@ class Multinomial:
         
         for instance in self.counts.keys():
             self.prob[instance] = self.counts[instance] / self.total
-
-        self.counts = defaultdict(float)
-        self.total = 0
-    

@@ -15,8 +15,7 @@ class Parser:
             self.pickle_handler.init_all_dicts()
         # as we rewrite the probabilities each time, we use tmp instea\
         # of the original probabilities
- 	self.dep_multinomial_holder = MultinomialHolder()
-	self.stop_multinomial_holder = MultinomialHolder()
+ 	self.multinomial_holder = MultinomialHolder()
 
     def run_em(self):
         sum_probs = defaultdict(float)
@@ -30,54 +29,54 @@ class Parser:
                 marginals = parsing_algo.get_marginals()
 		sum_probs[i] +=  \
 		    parsing_algo.total_potentials
-                nodes = parsing_algo.hypergraph.nodes
-                self.update_counts(marginals, nodes,
-                                   ["*"] + sentence.split())
+                edges = parsing_algo.hypergraph.edges
+                self.update_counts(marginals, edges)
+
+            assert sum_probs[i] > sum_probs[i-1], \
+                "The prob are %r, %r"% (sum_probs[i],  sum_probs[i-1])
 
             self.update_parameters()
 	    self.append_dicts(self.dep,
-			    self.dep_multinomial_holder)
+			    self.multinomial_holder.dep_mult_list,
+                              "prob")
 	    self.append_dicts(self.stop,
-			  self.stop_multinomial_holder)
+			  self.multinomial_holder.stop_mult_list,
+                              "stop_prob")
+            self.append_dicts(self.cont,
+                              self.multinomial_holder.stop_mult_list,
+                              "cont_prob")
+
+            self.multinomial_holder = MultinomialHolder()
+
 	pickle_hand = PickleHandler("tmp")
 	pickle_hand.write_to_pickle(self.dep, self.cont, self.stop)
 	pprint.pprint(sum_probs)
 
-    def display_hash(hash_table):
-        for key, value in hash_table.iteritems():
-            print key,value
-            
+    def update_counts(self, marginals, edges):
+        # state var indicates if head word is taking more children (1)\
+            # or stopped taking children (0)
+        for edge in edges:
+            head_word, mod_word, direct, adj, state = \
+                     str(edge.label).split()
 
-    def update_counts(self, marginals, nodes, words):
-        for node in nodes:
-            node_type, direct, span = str(node.label).split()
-            span = span.split("-")
-            values  = self.get_head_word(direct,span,
-                                                    words)
-            head_word, modifier = values[0], values[1]
-            adj = self.is_adj(int(span[1]), int(span[0]))
-            if(node_type == "trap"):
-                self.dep_multinomial_holder.inc_counts((head_word,
-		   modifier, direct), (head_word, direct), marginals[node.label])
+            if state == "1" and mod_word != '---':
+                self.multinomial_holder.inc_dep_counts((head_word,
+		   mod_word, direct), (head_word, direct, adj),
+                                               marginals[edge.label])
 		
-            if(node_type == "triStop"):
-                self.stop_multinomial_holder.inc_counts((head_word,
-		   direct, adj), (head_word,direct, adj),
-                                  marginals[node.label])
-
-    def get_head_word(self, direct, span, words):
-        return (words[int(span[1])], words[int(span[0])]) \
-            if direct == "left" else \
-            (words[int(span[0])], words[int(span[1])])
+            if state == "0":
+                self.multinomial_holder.inc_stop_counts((head_word,
+		   direct, adj), (head_word, direct, adj),
+                                  marginals[edge.label])
 
     def update_parameters(self):
-	self.dep_multinomial_holder.estimate()
-	self.stop_multinomial_holder.estimate()
+	self.multinomial_holder.estimate()
 
-    def append_dicts(self, hash_table, mult_holder):
+    def append_dicts(self, hash_table, mult_list, dict_name):
         for key, multinomial in  \
-	    mult_holder.mult_list.iteritems():
-    		for prob_key, value in multinomial.prob.iteritems():
+	    mult_list.iteritems():
+    		for prob_key, value in eval("multinomial."+ \
+                                    dict_name + ".iteritems()"):
 			hash_table[prob_key] = value
 		
     def get_sentences(self, file_path):
@@ -86,9 +85,6 @@ class Parser:
             sentences = fp.readlines()
         return sentences
 
-    def is_adj(self, pos1, pos2):
-        return "adj" if abs(pos2-pos1) == 1 else "non-adj"
-
 if __name__ == "__main__":
-    parser = Parser("data/corpus.txt", "data/harmonic_values")
+    parser = Parser("one_sent", "data/harmonic_values_all")
     parser.run_em()
