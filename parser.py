@@ -23,10 +23,9 @@ class Parser:
                 if(sentence.strip() == ""):
                     continue
                 parsing_algo = ParsingAlgo(sentence,
-				       self.dep, self.stop, self.cont)
+			 self.dep, self.stop, self.cont)
                 marginals = parsing_algo.get_marginals()
-		sum_probs[i] +=  \
-		    parsing_algo.total_potentials
+		sum_probs[i] += parsing_algo.total_potentials
                 edges = parsing_algo.hypergraph.edges
                 self.update_counts(marginals, edges)
 
@@ -52,10 +51,10 @@ class Parser:
         # state var indicates if head word is taking more children (1)
             # or stopped taking children (0)
         for edge in edges:
-            head_word, mod_word, direct, adj, state = \
-                     str(edge.label).split()
+            head_word, mod_word, direct, adj, state =\
+                                   str(edge.label).split()
 
-            if state == "1" and mod_word != '---':
+            if state == "1" :# and mod_word != '---':
                 self.multinomial_holder.inc_dep_counts((head_word,
 		   mod_word, direct), (head_word, direct, adj),
                                                marginals[edge.label])
@@ -73,12 +72,10 @@ class Parser:
 
 
     def append_dicts(self, hash_table, mult_list, dict_name):
-        for key, multinomial in  \
-	    mult_list.iteritems():
+        for key, multinomial in mult_list.iteritems():
     		for prob_key, value in eval("multinomial."+ \
-                                    dict_name + ".iteritems()"):
-                    
-			hash_table[prob_key] = value
+                              dict_name + ".iteritems()"):
+                    hash_table[prob_key] = value
 		
     def get_sentences(self, file_path):
         sentences = []

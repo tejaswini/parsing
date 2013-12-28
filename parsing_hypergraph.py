@@ -172,12 +172,12 @@ class ParsingAlgo:
         path = self.best_path()
         best_edges = path.edges
         depen = {}
-#        print "best path is"
+
         for edge in best_edges:
             label = str(edge.head.label)
             node_type, direct, span = label.split()
             span_first, span_end = span.split("-")
-#            print node_type, direct, span_first, span_end
+
             if node_type == "trap" and direct == "right":
                 depen[self.words[int(span_end)], int(span_end)] = \
                     (self.words[int(span_first)], span_first) 
@@ -198,9 +198,7 @@ class ParsingAlgo:
 		self.sum_potentials()
         root_value = self.total_potentials
 
-        if(root_value == 0):
-            print "sentence is"
-            pprint.pprint(self.words)
+        assert root_value > 0, "sentence is" + " ".join(self.words)
 
         for node in self.hypergraph.nodes:
             marginals[node.label] = marginal_values[node] / root_value

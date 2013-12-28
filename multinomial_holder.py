@@ -14,12 +14,10 @@ class MultinomialHolder:
 
     def inc_dep_counts(self, instance, cond_key, counts):
         if(cond_key[0:-1] not in self.dep_mult_list):
-            multinomial = DepMultinomial()
-            self.dep_mult_list[cond_key[0:-1]] = multinomial
+            self.dep_mult_list[cond_key[0:-1]] = DepMultinomial()
 
         if(cond_key not in self.dep_mult_list_adj):
-            multinomial = DepMultinomial()
-            self.dep_mult_list_adj[cond_key] = multinomial
+            self.dep_mult_list_adj[cond_key] = DepMultinomial()
 
         self.dep_mult_list_adj[cond_key].inc_counts(instance, counts)
         self.dep_mult_list[cond_key[0:-1]].\
@@ -27,8 +25,7 @@ class MultinomialHolder:
             
     def inc_stop_counts(self, instance, cond_key, counts):
         if(cond_key not in self.stop_mult_list):
-            multinomial = StopContMultinomial()
-            self.stop_mult_list[cond_key] = multinomial
+            self.stop_mult_list[cond_key] = StopContMultinomial()
         self.stop_mult_list[cond_key].inc_counts(instance, counts)
 
     def estimate(self):
@@ -37,7 +34,6 @@ class MultinomialHolder:
 
     def estimate_dep(self):
         for key in self.dep_mult_list.keys():
-            print key
             self.dep_mult_list[key].estimate()
 
         for key in self.dep_mult_list_adj.keys():
