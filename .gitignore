@@ -1,3 +1,5 @@
 *.pyc
 *~
 output
+note.aux
+note.log

@@ -54,7 +54,7 @@ class Parser:
             head_word, mod_word, direct, adj, state =\
                                    str(edge.label).split()
 
-            if state == "1" :# and mod_word != '---':
+            if state == "1" and mod_word != '---':
                 self.multinomial_holder.inc_dep_counts((head_word,
 		   mod_word, direct), (head_word, direct, adj),
                                                marginals[edge.label])
