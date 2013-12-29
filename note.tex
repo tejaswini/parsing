@@ -1,12 +1,89 @@
 \documentclass{article}
 
-\title{EM }
+\usepackage[T1]{fontenc}
+\usepackage{algpseudocode}
+\usepackage{algorithm} 
 
-% Auctex
+\title{Implementation}
 
 \begin{document}
-\date{}
+
 \maketitle{}
+
+\date{}
+
+\section{Implementation}
+
+The crux of the dependency parser is Eisner's parsing algorithm. A slightly modified version of the same was used which is given below:
+
+
+\begin{algorithm}
+\begin{algorithmic}
+  \State Initialization:
+     \For{s = 0 to n}
+
+        Form Triangle of size 1
+        \State C[s][s][$\rightarrow$][1] = C[s][s][$\leftarrow$][1] = 0.0
+        Form TriStop of size 1
+        \State C[s][s][$\rightarrow$][2] = C[s][s][$\leftarrow$][2] = 0.0
+\EndFor
+
+
+\For{ k = 1 to n + 1}
+  \For{s = 0 to n}
+
+
+    \State t=s+k
+     \State if t > n then break
+     \State First: create Trapezium
+      \State C[s][t][$\leftarrow$][0] = $max_{s \le r< t}$ (C[s][r][$\rightarrow$][1] + C[r + 1][t][$\leftarrow$][1] + S(t, s)) 
+      \State C[s][t][$\rightarrow$][0] = $max_{s \le r<t}$ (C[s][r][$\rightarrow$][1] + C[r + 1][t][$\leftarrow$][1] + S(s, t)) 
+      \State Second: create Triangle
+      \State C[s][t][$\leftarrow$][1] = $max_{s \le r<t}$ (C[s][r][$\leftarrow$][1] + C[r][t][$\leftarrow$][0])
+      \State C[s][t][$\rightarrow$][1] = $max_{s<r \le t}$ (C[s][r][$\rightarrow$][0] + C[r][t][$\rightarrow$][1])
+      \State Second: create Tristop
+      \State C[s][t][$\leftarrow$][1] = $max_{s \le r<t}$ (C[s][r][$\leftarrow$][1] + C[r][t][$\leftarrow$][0])
+      \State C[s][t][$\rightarrow$][1] = $max_{s<r \le t}$ (C[s][r][$\rightarrow$][0] + C[r][t][$\rightarrow$][1])
+
+
+\EndFor
+\EndFor
+
+      \State Return C[0][n][$\rightarrow$][1] as the highest score for any parse \\
+
+\end{algorithmic}
+\end{algorithm}
+
+
+An open source library called PyDecode is used to build a hypergraph, with all the triangles, trapezium and Tristop formed in the Eisner's parsing algorithm as its nodes. The edges of the hypergraph are assigned weights according to certain rules. An edge has head word, modifier word, direction, adjacency and state values stored in it. The direction indicates the direction in which the edge is being formed. The adjacency indicates if the modifier word is the first child of the head word, in which case it is ``adj``, or not, in which case it is ``non-adj``. The edge joining a Triangle with TriStop to form a Trapezium is responsible for dependency probability. The edge forming a TriStop from a Triangle is used to calculate the stop probability. If an edge does not have a modifier, the modifier word is ``---``.
+
+ The insideOutside algorithm is run on the entire hypergraph. The inside probability of the root of the hypergraph gives the total probability of the sentence Z. The marginals of the hypergraph are computed using the PyDecode library. The marginals = marginals / Z gives the counts for the EM algorithm.
+
+The em algorithm is run 20 times for all the sentences. The hypergraph is built for each sentence. The stop and dep probabilities are incremented according to the following algorithm:
+
+
+\begin{algorithm}
+\begin{algorithmic}
+
+\For{edge in hypergraph.edges}
+   \State headWord, modWord, direct, adj, state = edge.label.split()
+
+       \If{state == "1" and modWord != '---'}
+          \State depCounts[headWord, modWord, direct] += marginals[edge.label]
+        \EndIf
+
+
+        \If{state == "0"}
+          \State stopCounts[headWord, direct, adj] += marginals[edge.label]
+        \EndIf
+
+\EndFor
+
+\end{algorithmic}
+\end{algorithm}
+
+\section{EM}
+
 
 \begin{itemize}
 \item sentence; $w_1 \ldots w_n$
@@ -75,8 +152,3 @@ Maximization Step
 
 
 \end{document}
-
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: t
-%%% End: 
