@@ -3,6 +3,9 @@
 \usepackage[T1]{fontenc}
 \usepackage{algpseudocode}
 \usepackage{algorithm} 
+\usepackage{bm}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric}
 
 \title{Implementation}
 
@@ -12,19 +15,39 @@
 
 \date{}
 
-\section{Implementation}
+A dependency parse comprises of a (head word, modifier word) pair. The modifier is dependent on the head word. Given a sentence, there are several such parses possible.  The crux of implementation is building a hypergraph using all these possible parses.
 
-The crux of the dependency parser is Eisner's parsing algorithm. A slightly modified version of the same was used which is given below:
+\section{Hypergraph}
 
+A hypergraph is a pair H = (V, E), where V is the set of vertices, E is the set of hyperedges. A weighted hypergraph is associated with the set of weights W. Each hyperedge e $\epsilon$ E of a weighted graph is a triple e = (T(e), h(e), f(e)), where h(e) $\epsilon$ V is its head vertex and T(e) $\epsilon$ $V^*$ is an ordered list of tail vertices. f(e) is a weight function from W|T(e)| to W.
+
+The words in a sentence combine in different ways to form sub parses. The subparses form the vertices of the hypergraph. One or more of the sub parses that combine to form another sub parse form the tail nodes of the edge. The resultant subparse is the head node of the edge. The weights of the edges are determined by an algorithm presented later. The best parse can be computed as the maximum weighted path encompassing all the words leading to the root. 
+  The probability sub parse SP formed at vertex $V_{SP}$, for a given sentence is given by:
+            P($V_{SP}$) = $\sum_{\forall e \epsilon H(e) = V_{SP}}$ f(e)
+
+The probability of this subparse for the entire grammar is obtained by summing the P($V_{SP}$) for all the sentences in the grammar.
+
+\section{Eisner's parsing algorithm}
+
+Eisner's parsing algorithm is an efficient way to come up with all the possible parses. The computational complexity of Regular CKY parsing for lexicalized grammar is $\bm{O(n^5)}$ while that for Eisner's algorithm is $\bm{O(n^3)}$. Here, we discuss about a modified version of the Eisner's algorithm.
+
+The 3 basic compenents of this algorithm are: incomplete constituents, complete constituents, complete stopped constituent. The constituent has  3 attributes namely index of the head word, index of the modifier word and the direction. A complete constituent with head word h can can choose to take another word as its dependent with a certain probability called the continue probability. The head word of a complete constituent stops taking further arguments in that direction with a probability called the stop probability, leading to the formation of a complete stopped constituent. A word h takes another word m as its argument only m stopped taking arguments on both sides. Thus a complete constituent with head word h combines with a complete stopped constituent m to create an incomplete constituent. An incomplete constituent with head word h and modifier m then combines with a complete stopped constituent whose head word is m to form a complete constituent. This continues until two complete stopped constituents are formed in either directions together spanning the entire sentence. A complete stopped constituent is a type of complete constituent. Every word by default is a complete constituent.
+
+The psuedocode of the algorithm is given in Figure 1. The dynamic programming table C[s][t][d][c] stores the sum of probabilities of the subtrees that can be formed from s to t in the direction d. c indicates the type of the constituent. if c = 0, it is an incomplete constituent. c = 1, it is a complete constituent. c = 2 indicates that it is a complete stop constituent.
 
 \begin{algorithm}
+
+\caption{Eisner's parsing algorithm}
+  \label{Figure 1}
+
 \begin{algorithmic}
+
   \State Initialization:
      \For{s = 0 to n}
 
-        Form Triangle of size 1
+        Form complete constituent of size 1
         \State C[s][s][$\rightarrow$][1] = C[s][s][$\leftarrow$][1] = 0.0
-        Form TriStop of size 1
+        Form complete constituent stop of size 1
         \State C[s][s][$\rightarrow$][2] = C[s][s][$\leftarrow$][2] = 0.0
 \EndFor
 
@@ -35,45 +58,77 @@ The crux of the dependency parser is Eisner's parsing algorithm. A slightly modi
 
     \State t=s+k
      \State if t > n then break
-     \State First: create Trapezium
-      \State C[s][t][$\leftarrow$][0] = $max_{s \le r< t}$ (C[s][r][$\rightarrow$][1] + C[r + 1][t][$\leftarrow$][1] + S(t, s)) 
-      \State C[s][t][$\rightarrow$][0] = $max_{s \le r<t}$ (C[s][r][$\rightarrow$][1] + C[r + 1][t][$\leftarrow$][1] + S(s, t)) 
-      \State Second: create Triangle
-      \State C[s][t][$\leftarrow$][1] = $max_{s \le r<t}$ (C[s][r][$\leftarrow$][1] + C[r][t][$\leftarrow$][0])
-      \State C[s][t][$\rightarrow$][1] = $max_{s<r \le t}$ (C[s][r][$\rightarrow$][0] + C[r][t][$\rightarrow$][1])
-      \State Second: create Tristop
-      \State C[s][t][$\leftarrow$][1] = $max_{s \le r<t}$ (C[s][r][$\leftarrow$][1] + C[r][t][$\leftarrow$][0])
-      \State C[s][t][$\rightarrow$][1] = $max_{s<r \le t}$ (C[s][r][$\rightarrow$][0] + C[r][t][$\rightarrow$][1])
+     \State First: create incomplete constituent
+      \State C[s][t][$\leftarrow$][0] = $\sum_{s \le r< t}$ (C[s][r][$\rightarrow$][2] + C[r + 1][t][$\leftarrow$][1] + S(t, s)) 
+      \State C[s][t][$\rightarrow$][0] = $\sum_{s \le r<t}$ (C[s][r][$\rightarrow$][1] + C[r + 1][t][$\leftarrow$][2] + S(s, t)) 
+      \State Second: create complete constituent
+      \State C[s][t][$\leftarrow$][1] = $\sum_{s \le r<t}$ (C[s][r][$\leftarrow$][2] + C[r][t][$\leftarrow$][0])
+      \State C[s][t][$\rightarrow$][1] = $\sum_{s<r \le t}$ (C[s][r][$\rightarrow$][0] + C[r][t][$\rightarrow$][2])
+      \State Second: create complete constituent stop
+      \State C[s][t][$\leftarrow$][2] = $\sum_{s \le r<t}$ (C[s][r][$\leftarrow$][1])
+      \State C[s][t][$\rightarrow$][2] = $\sum_{s<r \le t}$ (C[s][r][$\rightarrow$][1])
 
 
 \EndFor
 \EndFor
 
-      \State Return C[0][n][$\rightarrow$][1] as the highest score for any parse \\
+      \State Return C[0][n][$\rightarrow$][1] as the highest score for any parse
 
 \end{algorithmic}
 \end{algorithm}
 
 
-An open source library called PyDecode is used to build a hypergraph, with all the triangles, trapezium and Tristop formed in the Eisner's parsing algorithm as its nodes. The edges of the hypergraph are assigned weights according to certain rules. An edge has head word, modifier word, direction, adjacency and state values stored in it. The direction indicates the direction in which the edge is being formed. The adjacency indicates if the modifier word is the first child of the head word, in which case it is ``adj``, or not, in which case it is ``non-adj``. The edge joining a Triangle with TriStop to form a Trapezium is responsible for dependency probability. The edge forming a TriStop from a Triangle is used to calculate the stop probability. If an edge does not have a modifier, the modifier word is ``---``.
 
- The insideOutside algorithm is run on the entire hypergraph. The inside probability of the root of the hypergraph gives the total probability of the sentence Z. The marginals of the hypergraph are computed using the PyDecode library. The marginals = marginals / Z gives the counts for the EM algorithm.
+\section{Algorithm}
 
-The em algorithm is run 20 times for all the sentences. The hypergraph is built for each sentence. The stop and dep probabilities are incremented according to the following algorithm:
+The motive of the parser is to obtain the parameters of the grammar which are 
+
+\begin{itemize}
+\item The probability that a head word takes a modifier (depProb[h, m, direction])
+\item The probability that a head word continues to take further arguments (contProb[h, direction, adj])
+\item The probability that a head word stops taking further arguments (stopProb[h, direction, adj]). 
+\end{itemize}
+
+An open source library called PyDecode is used to build a hypergraph, with all the 3 constituents of the Eisner's parsing algorithm as its nodes. An edge has head word, modifier word, direction, adjacency and state values stored in it. The direction indicates the direction in which the edge is being formed. The adjacency indicates if the modifier word is the first child of the head word, in which case it is ``adj``, or not, in which case it is ``non-adj``. If an edge does not have a modifier, the modifier word is ``---``.The edges of the hypergraph are assigned weights according to algorithm given in Figure 2:
+
+\begin{algorithm}
+  \label{Figure 2}
+\begin{algorithmic}
+
+
+\State Lets assume incomplete constituent as i.c and complete constiuent stop as c.s
+
+\If{edge.headNode $\epsilon$ i.c}
+   \State return depProb[edge.headWord, edge.modifierWord, edge.dir] * contProb[edge.headWord, edge.dir, edge.isAdj]
+\ElsIf{edge.headNode $\epsilon$ c.s}
+   \State return stopProb[edge.headWord, edge.dir, edge.isAdj]
+\Else
+   \State return 1
+\EndIf
+
+\end{algorithmic}
+\end{algorithm}
+
+ The insideOutside algorithm is run on the entire hypergraph. The inside probability of the root of the hypergraph gives the total probability of the sentence Z. The marginals of the nodes and the edges of the hypergraph are computed using the PyDecode library. The marginals = marginals / Z gives the counts for the EM algorithm.
+
+The em algorithm is run 20 times for all the sentences. The hypergraph is built for each sentence. The stop and dep probabilities are incremented according to the algorithm in Figure 3:
 
 
 \begin{algorithm}
+  \label{Figure 3}
 \begin{algorithmic}
 
+\State Lets assume incomplete constituent as i.c and complete constiuent stop as c.s
+
 \For{edge in hypergraph.edges}
+
    \State headWord, modWord, direct, adj, state = edge.label.split()
 
-       \If{state == "1" and modWord != '---'}
-          \State depCounts[headWord, modWord, direct] += marginals[edge.label]
+       \If{edge.headNode $\epsilon$ i.c}
+          \State depCounts[headWord, modWord, direct, adj] += marginals[edge.label]
         \EndIf
 
-
-        \If{state == "0"}
+        \If{edge.headNode $\epsilon$ c.s}
           \State stopCounts[headWord, direct, adj] += marginals[edge.label]
         \EndIf
 
@@ -91,15 +146,9 @@ The em algorithm is run 20 times for all the sentences. The hypergraph is built 
 \item modifier; $m \in \{1 \ldots n\}$
 \item head; $h \in \{0 \ldots n\}$
 \item direction; ${\cal D}= \{\textrm{L}, \textrm{R}\}$
-\item edge; ${\cal E}= \{\textrm{E(h, m!=--, dir, ADJ, cont=1)}, \textrm{E(h, m=--, dir, ADJ, cont=1)}, \textrm{E(h, dir, ADJ, cont=0)}\}$
-
-The first edge \textrm{E(h, m!=--, ADJ, cont=1)} is created when a Triangle whose head word is still taking children combines with a tringle whose headword has stopped taking children (TriStop) to form a trapezium.
-
-The edge \textrm{E(h, m=--, ADJ, cont=1)} is created when a Trapezium combines with a tringle whose headword has stopped taking children (TriStop) to form a Triangle.
-
-The edge \textrm{E(h, dir, ADJ, cont=0)} is created when a Triangle's headword stops taking children to form TriStop.
-
-
+\item let the type of incomplete constituent be Trap, complete constituent be Tri and complete stop constituent be TriStop
+\item edge; ${\cal E}= \{E.headWord \epsilon Trap, E.headWord \epsilon Tri, E.headWord \epsilon TriStop\}$
+The label of an edge comprises of headWord h, modifier m, direction dir, CONT, ADJ as mentioned in the earlier section
 \item marginals $p(edge)$
 \end{itemize}
 
@@ -108,10 +157,10 @@ The probabilities
 
 \begin{itemize}
 \item $p(\mathrm{CONT} | w, dir, \mathrm{ADJ})$; $\mathrm{CONT} \in \{0, 1\}$,  $w \in {\cal W}$, $\mathrm{ADJ} \in \{0, 1\}$, $dir \in \{0,1\}$
-\item $c(\mathrm{CONT}, w, \mathrm{ADJ})$
-\item $p(u | v, dir, \mathrm{ADJ})$; $\mathrm{CONT} \in \{0, 1\}$,  $u, v \in {\cal W}$, $\mathrm{ADJ} \in \{0, 1\}$
-\item $c(u, v, dir)$
-\item $c(u, v, dir, \mathrm{ADJ})$
+\item $stopCounts(w, dir, \mathrm{ADJ})$
+\item $p(m | h, dir, \mathrm{ADJ})$; $\mathrm{CONT} \in \{0, 1\}$,  $h, m \in {\cal W}$, $\mathrm{ADJ} \in \{0, 1\}$
+\item $depCount(h, m, dir)$
+\item $depCount(h, m, dir, \mathrm{ADJ})$
 
 \end{itemize}
 
@@ -122,33 +171,26 @@ Estimation Step
 
 Fill in the $c$ charts. 
 
-
-
- \[c(\mathrm{CONT} = 0, h, dir, \mathrm{ADJ}= 1) \gets 
+ \[stopCounts(h, dir, \mathrm{ADJ}= 1) \gets 
   \sum p(\mathrm{E(h, dir, ADJ=1, CONT = 0)}) \]
 
- \[c(\mathrm{CONT} = 0, h, dir, \mathrm{ADJ}= 0) \gets 
+ \[stopCounts(h, dir, \mathrm{ADJ}= 0) \gets 
   \sum p(\mathrm{E(h, dir, ADJ=0, CONT = 0)}) \]
 
-\[c(h, m, dir, \mathrm{ADJ}) \gets   \sum p(\mathrm{E(h, m!=--, dir, ADJ, CONT = 1)}) \]
+\[depCounts(h, m, dir, \mathrm{ADJ}) \gets \sum p(\mathrm{E(h, m!=--, dir, ADJ, CONT = 1)}) \]
 
-\[c(h, m, dir) \gets   \sum\limits_{ADJ=\{0,1\}} p(\mathrm{E(h, m!=--, dir, CONT = 1)}) \]
-
+\[depCounts(h, m, dir) \gets \sum\limits_{ADJ=\{0,1\}} p(\mathrm{E(h, m!=--, dir, CONT = 1)}) \]
 
 Maximization Step
 
-  \[p(\mathrm{CONT} | h, dir, \mathrm{ADJ}) \gets 
-  \frac{c(\mathrm{CONT}, h, dir, \mathrm{ADJ})}{
-    \sum_{m \in {\cal W}} c(h, m, dir, ADJ) + c(\mathrm{CONT}, h, dir, \mathrm{ADJ})} 
+  \[p(\mathrm{CONT}=0 | h, dir, \mathrm{ADJ}) \gets 
+  \frac{stopCounts(h, dir, \mathrm{ADJ})}{
+    \sum_{m \in {\cal W}} depCounts(h, m, dir, ADJ) + stopCounts(h, dir, \mathrm{ADJ})} 
   \]
-
-
 
   \[p(m | h, dir) \gets 
-  \frac{c(h, m, dir)}{
-    \sum_{m \in {\cal W}} c(h, m, dir)}
+  \frac{depCounts(h, m, dir)}{
+    \sum_{m \in {\cal W}} depCounts(h, m, dir)}
   \]
-
-
 
 \end{document}
