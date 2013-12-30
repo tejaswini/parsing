@@ -13,7 +13,6 @@ class DepMultinomial:
 
     def estimate(self):
         if(self.total == 0):
-           self.counts = defaultdict(float)
            return
         
         for instance in self.counts.keys():

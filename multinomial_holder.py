@@ -59,4 +59,3 @@ class MultinomialHolder:
             self.stop_mult_list[key].inc_counts(key, 0)
             self.stop_mult_list[key].\
                 estimate(self.dep_mult_list_adj[key].total)
-            self.stop_mult_list[key].cont_prob
