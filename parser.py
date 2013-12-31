@@ -13,7 +13,8 @@ class Parser:
         self.pickle_handler = PickleHandler(self.initial_values_path)
         self.dep, self.cont, self.stop = \
             self.pickle_handler.init_all_dicts()
-        self.multinomial_holder = MultinomialHolder()
+        self.stop_multinomial_holder = MultinomialHolder()
+        self.dep_multinomial_holder = MultinomialHolder()
 
     def run_em(self):
         sum_probs = defaultdict(float)
@@ -33,12 +34,19 @@ class Parser:
                 "The prob are %r, %r"% (sum_probs[i],  sum_probs[i-1])
 
             self.update_parameters()
-            
-	    self.append_dicts(self.dep, "dep_prob")
-	    self.append_dicts(self.stop, "stop_prob")
-            self.append_dicts(self.cont, "cont_prob")
 
-            self.multinomial_holder = MultinomialHolder()
+            print "appending dep"
+	    self.append_dicts(self.dep_multinomial_holder,
+                              self.dep, "0")
+            print "appending stop"
+	    self.append_dicts(self.stop_multinomial_holder,
+                              self.stop, "0")
+            print "appending cont"
+            self.append_dicts(self.stop_multinomial_holder,
+                              self.cont, "1")
+
+            self.stop_multinomial_holder = MultinomialHolder()
+            self.dep_multinomial_holder = MultinomialHolder()
 
 	pickle_hand = PickleHandler("tmp")
 	pickle_hand.write_to_pickle(self.dep, self.cont, self.stop)
@@ -52,27 +60,32 @@ class Parser:
                                    str(edge.label).split()
 
             if state == "1" and mod_word != '---':
-                self.multinomial_holder.inc_counts("cont", (head_word,
-		   mod_word, direct, adj), (head_word, direct, adj),
+                self.stop_multinomial_holder.inc_counts(1, (head_word,
+		   direct, adj), (head_word, direct, adj),
+                                               marginals[edge.label])
+
+                self.dep_multinomial_holder.inc_counts(0, (head_word,
+		   mod_word, direct), (head_word, direct, adj),
                                                marginals[edge.label])
 
             if state == "0":
-                self.multinomial_holder.\
-                    inc_counts("stop", (head_word, direct, adj),
+                self.stop_multinomial_holder.\
+                    inc_counts(0, (head_word, direct, adj),
                       (head_word, direct, adj), marginals[edge.label])
 
     def update_parameters(self):
-	self.multinomial_holder.estimate()
+	self.dep_multinomial_holder.estimate()
+        self.stop_multinomial_holder.estimate()
         self.dep = defaultdict(float)
         self.stop = defaultdict(float)
         self.cont = defaultdict(float)
 
 
-    def append_dicts(self, hash_table, dict_name):
+    def append_dicts(self, multinomial_holder, hash_table, dict_name):
         for key, multinomial in \
-                self.multinomial_holder.mult_list.iteritems():
-    		for prob_key, value in eval("multinomial."+ \
-                              dict_name + ".iteritems()"):
+                multinomial_holder.mult_list.iteritems():
+    		for prob_key, value in eval("multinomial.prob[int("+ \
+                              dict_name + ")]" + ".iteritems()"):
                     hash_table[prob_key] = value
 		
     def get_sentences(self, file_path):
