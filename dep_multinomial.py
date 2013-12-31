@@ -14,6 +14,6 @@ class DepMultinomial:
     def estimate(self):
         if(self.total == 0):
            return
-        
+    
         for instance in self.counts.keys():
             self.prob[instance] = self.counts[instance] / self.total

@@ -1,5 +1,7 @@
 from parsing_hypergraph import ParsingAlgo
 from multinomial_holder import MultinomialHolder
+from cont_stop_mult_holder import ContStopMultHolder
+from dep_mult_holder import DepMultinomialHolder
 import pprint
 from collections import defaultdict
 import cPickle as pickle
@@ -13,7 +15,8 @@ class Parser:
         self.pickle_handler = PickleHandler(self.initial_values_path)
         self.dep, self.cont, self.stop = \
             self.pickle_handler.init_all_dicts()
- 	self.multinomial_holder = MultinomialHolder()
+ 	self.cont_stop_multinomial_holder = ContStopMultHolder()
+        self.dep_multinomial_holder = DepMultinomialHolder()
 
     def run_em(self):
         sum_probs = defaultdict(float)
@@ -35,13 +38,16 @@ class Parser:
             self.update_parameters()
             
 	    self.append_dicts(self.dep,
-		   self.multinomial_holder.dep_mult_list, "prob")
+		   self.dep_multinomial_holder.dep_mult_list, "prob")
 	    self.append_dicts(self.stop,
-		   self.multinomial_holder.stop_mult_list, "stop_prob")
+		   self.cont_stop_multinomial_holder.\
+                                 cont_stop_mult_list, "stop_prob")
             self.append_dicts(self.cont,
-                   self.multinomial_holder.stop_mult_list, "cont_prob")
+                   self.cont_stop_multinomial_holder.\
+                                  cont_stop_mult_list, "cont_prob")
 
-            self.multinomial_holder = MultinomialHolder()
+            self.cont_stop_multinomial_holder = ContStopMultHolder()
+            self.dep_multinomial_holder = DepMultinomialHolder()
 
 	pickle_hand = PickleHandler("tmp")
 	pickle_hand.write_to_pickle(self.dep, self.cont, self.stop)
@@ -55,17 +61,26 @@ class Parser:
                                    str(edge.label).split()
 
             if state == "1" and mod_word != '---':
-                self.multinomial_holder.inc_dep_counts((head_word,
+                self.dep_multinomial_holder.inc_counts((head_word,
 		   mod_word, direct), (head_word, direct, adj),
                                                marginals[edge.label])
+                self.cont_stop_multinomial_holder.\
+                    inc_cont_counts((head_word, direct, adj),
+                                      marginals[edge.label])
+
+            if state == "1" and mod_word == '---':
+                self.cont_stop_multinomial_holder.\
+                    inc_cont_counts((head_word, direct, adj),
+                                    marginals[edge.label])
 		
             if state == "0":
-                self.multinomial_holder.inc_stop_counts((head_word,
-		   direct, adj), (head_word, direct, adj),
+                self.cont_stop_multinomial_holder.\
+                    inc_stop_counts((head_word, direct, adj),
                                   marginals[edge.label])
 
     def update_parameters(self):
-	self.multinomial_holder.estimate()
+	self.dep_multinomial_holder.estimate()
+        self.cont_stop_multinomial_holder.estimate()
         self.dep = defaultdict(float)
         self.stop = defaultdict(float)
         self.cont = defaultdict(float)
