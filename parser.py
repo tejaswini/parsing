@@ -34,17 +34,7 @@ class Parser:
                 "The prob are %r, %r"% (sum_probs[i],  sum_probs[i-1])
 
             self.update_parameters()
-
-            print "appending dep"
-	    self.append_dicts(self.dep_multinomial_holder,
-                              self.dep, "0")
-            print "appending stop"
-	    self.append_dicts(self.stop_multinomial_holder,
-                              self.stop, "0")
-            print "appending cont"
-            self.append_dicts(self.stop_multinomial_holder,
-                              self.cont, "1")
-
+	    self.append_dicts()
             self.stop_multinomial_holder = MultinomialHolder()
             self.dep_multinomial_holder = MultinomialHolder()
 
@@ -61,17 +51,14 @@ class Parser:
 
             if state == "1" and mod_word != '---':
                 self.stop_multinomial_holder.inc_counts(1, (head_word,
-		   direct, adj), (head_word, direct, adj),
-                                               marginals[edge.label])
-
-                self.dep_multinomial_holder.inc_counts(0, (head_word,
-		   mod_word, direct), (head_word, direct, adj),
-                                               marginals[edge.label])
+                     direct, adj), marginals[edge.label])
+                self.dep_multinomial_holder.inc_counts(mod_word,
+                     (head_word, direct), marginals[edge.label])
 
             if state == "0":
                 self.stop_multinomial_holder.\
                     inc_counts(0, (head_word, direct, adj),
-                      (head_word, direct, adj), marginals[edge.label])
+                               marginals[edge.label])
 
     def update_parameters(self):
 	self.dep_multinomial_holder.estimate()
@@ -81,18 +68,30 @@ class Parser:
         self.cont = defaultdict(float)
 
 
-    def append_dicts(self, multinomial_holder, hash_table, dict_name):
+    def append_dicts(self):
         for key, multinomial in \
-                multinomial_holder.mult_list.iteritems():
-    		for prob_key, value in eval("multinomial.prob[int("+ \
-                              dict_name + ")]" + ".iteritems()"):
-                    hash_table[prob_key] = value
+                self.dep_multinomial_holder.mult_list.iteritems():
+    		for modifier in multinomial.prob.keys():
+                    self.dep[key[0], modifier, key[1]] =\
+                        multinomial.prob[modifier]
+
+        for key, multinomial in \
+                self.stop_multinomial_holder.mult_list.iteritems():
+    		for is_cont  in multinomial.prob.keys():
+                    hash_table = {}
+                    if(is_cont == 1):
+                        hash_table = self.cont
+                    else:
+                        hash_table = self.stop
+
+                    hash_table[key] = multinomial.prob[is_cont]
 		
     def get_sentences(self, file_path):
         sentences = []
         with open(file_path,"r") as fp:
             sentences = fp.readlines()
         return sentences
+
 
 if __name__ == "__main__":
     parser = Parser("one_sent", "data/harmonic_values_all")
