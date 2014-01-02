@@ -13,6 +13,12 @@ class Multinomial:
             self.total += counts
 
     def estimate(self):
+        self.prob = defaultdict(float)
+        if(self.total == 0):
+            print "total is 0"
+            return
         for instance in self.counts.keys():
           self.prob[instance] = \
               self.counts[instance] / self.total
+        self.counts = defaultdict(float)
+        self.total = 0.0

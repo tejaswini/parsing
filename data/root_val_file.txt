@@ -1,0 +1,12 @@
+leftcontinue * nochild : -1
+leftcontinue * haschild : -1
+rightcontinue * haschild : -1
+rightcontinue * nochild : -0.04575749056
+leftstop * nochild : -0.04575749056
+leftstop * haschild : -0.04575749056
+rightstop * nochild : -1
+rightstop * haschild : -0.04575749056
+
+
+
+

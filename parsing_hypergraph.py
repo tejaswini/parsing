@@ -26,17 +26,14 @@ class Arc(namedtuple(
 
 class DepType(namedtuple("DepType", ["type", "dir", "head_word",
                          "mod_word"])):
-
     def __str(self):
         return "%s %s %s" % (self.type, self.dir, self.head_word)
 
-
 class ParsingAlgo:
 
-    def __init__(self, sentence, dep, stop, cont):
-	self.dep = dep
-	self.stop = stop
-	self.cont = cont
+    def __init__(self, sentence, dep_mult_list, stop_cont_mult_list):
+	self.dep_mult_list = dep_mult_list
+	self.stop_cont_mult_list = stop_cont_mult_list
         self.Tri = "tri"
         self.Trap = "trap"
         self.TriStop = "triStop"
@@ -44,6 +41,8 @@ class ParsingAlgo:
         self.Left = "left"
         self.adj = "adj"
         self.non_adj = "non-adj"
+        self.stop = 0
+        self.cont = 1
         self.c = chart.ChartBuilder(
                        lambda a: a, chart.HypergraphSemiRing,
                        build_hypergraph=True)
@@ -174,8 +173,7 @@ class ParsingAlgo:
         depen = {}
 
         for edge in best_edges:
-            label = str(edge.head.label)
-            node_type, direct, span = label.split()
+            node_type, direct, span = str(edge.head.label).split()
             span_first, span_end = span.split("-")
 
             if node_type == "trap" and direct == "right":
@@ -217,19 +215,23 @@ class ParsingAlgo:
 	    
     def build_potentials(self, arc):
         if(arc.is_cont and arc.modifier_word!='---'):
-            x =  self.dep[arc.head_word, arc.modifier_word,
-                            arc.dir] \
-                * self.cont[arc.head_word, arc.dir, arc.is_adj]
+            x =  self.dep_mult_list[arc.head_word, arc.dir].\
+                prob[arc.modifier_word] * self.stop_cont_mult_list\
+                [arc.head_word, arc.dir, arc.is_adj].prob[self.cont]
             if(x == 0):
                  print "dep arc is 0"
-                 print self.dep[arc.head_word, arc.modifier_word, \
-                   arc.dir], arc.head_word, arc.modifier_word, \
-                 self.cont[arc.head_word, arc.dir, arc.is_adj]
+                 print self.dep_mult_list[arc.head_word, arc.dir].\
+                     prob[arc.modifier_word], self.stop_cont_mult_list\
+                     [arc.head_word, arc.dir, arc.is_adj].\
+                     prob[self.cont], arc.head_word, \
+                     arc.modifier_word, arc.dir
+
             return x
 
     # When head words is not empty, it means constit2
         elif(arc.is_cont == 0):
-            return self.stop[arc.head_word, arc.dir, arc.is_adj]
+            return self.stop_cont_mult_list[arc.head_word, arc.dir,
+                                       arc.is_adj].prob[self.stop]
 
     # When the tuple does not have any values, 
       #it means trap to constit
@@ -251,9 +253,9 @@ class ParsingAlgo:
 
 if __name__ == "__main__":
     sentence = "NNP NNP VBZ NNP ."
-    pickle_handler = PickleHandler("data/harmonic_values_all")
-    dep, cont, stop = pickle_handler.init_all_dicts()
-    parsing = ParsingAlgo(sentence, dep, stop, cont)
+    pickle_handler = PickleHandler("data/harmonic_values_mult")
+    dep_mult, stop_cont_mult = pickle_handler.init_all_dicts()
+    parsing = ParsingAlgo(sentence, dep_mult, stop_cont_mult)
     parsing.get_hypergraph()
     edge = parsing.hypergraph.edges[0]
     parsing.display()
