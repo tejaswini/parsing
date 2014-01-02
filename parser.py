@@ -4,6 +4,7 @@ import pprint
 from collections import defaultdict
 import cPickle as pickle
 from pickle_handler import PickleHandler
+import math
 
 class Parser:
 
@@ -20,7 +21,7 @@ class Parser:
 
 
     def run_em(self):
-        sum_probs = defaultdict(float)
+        sum_probs = defaultdict(lambda: 1.0)
         for i in range(10):
             print "iteration ", i
             for sentence in self.sentences:
@@ -30,12 +31,13 @@ class Parser:
 			 self.dep_multinomial_holder.mult_list,
                                self.stop_multinomial_holder.mult_list)
                 marginals = parsing_algo.get_marginals()
-		sum_probs[i] += parsing_algo.total_potentials
+		sum_probs[i] += math.log(parsing_algo.total_potentials)
                 edges = parsing_algo.hypergraph.edges
                 self.update_counts(marginals, edges)
 
-            assert sum_probs[i] > sum_probs[i-1], \
-               "The prob are %r, %r"% (sum_probs[i],  sum_probs[i-1])
+            if(sum_probs[i-1]!=1.0):
+                assert sum_probs[i] > sum_probs[i-1], \
+                 "The prob are %r, %r"% (sum_probs[i],  sum_probs[i-1])
 
             self.update_parameters()
             self.validate_multinomials(self.dep_multinomial_holder)
@@ -47,8 +49,6 @@ class Parser:
 	pprint.pprint(sum_probs)
 
     def update_counts(self, marginals, edges):
-        # state var indicates if head word is taking more children (1)
-            # or stopped taking children (0)
         for edge in edges:
             arc = edge.label
             if arc.is_cont and arc.modifier_word != "":
@@ -82,5 +82,5 @@ class Parser:
                + str(total)
 
 if __name__ == "__main__":
-    parser = Parser("one_sent", "data/harmonic_values_mult")
+    parser = Parser("sentences_all.txt", "data/harmonic_values_mult")
     parser.run_em()
