@@ -243,9 +243,6 @@ class ParsingAlgo:
         self.get_hypergraph()
         marginals = self.get_marginals()
 
-        for node in self.hypergraph.nodes:
-            print node.label, marginals[node.id]
-
         for edge in self.hypergraph.edges:
             print edge.label
 
