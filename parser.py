@@ -34,8 +34,8 @@ class Parser:
                 edges = parsing_algo.hypergraph.edges
                 self.update_counts(marginals, edges)
 
-            # assert sum_probs[i] > sum_probs[i-1], \
-            #   "The prob are %r, %r"% (sum_probs[i],  sum_probs[i-1])
+            assert sum_probs[i] > sum_probs[i-1], \
+               "The prob are %r, %r"% (sum_probs[i],  sum_probs[i-1])
 
             self.update_parameters()
 
@@ -52,15 +52,15 @@ class Parser:
             if arc.is_cont and arc.modifier_word != '---':
                 self.stop_multinomial_holder.inc_counts(1,
                      (arc.head_word, arc.dir, arc.is_adj),
-                                                 marginals[arc])
+                                                 marginals[edge.id])
                 self.dep_multinomial_holder.inc_counts(arc.\
                    modifier_word,(arc.head_word, arc.dir),
-                                                 marginals[arc])
+                                                 marginals[edge.id])
 
             if arc.is_cont == 0:
                 self.stop_multinomial_holder.\
                     inc_counts(0, (arc.head_word, arc.dir, arc.is_adj),
-                               marginals[arc])
+                               marginals[edge.id])
 
     def update_parameters(self):
 	self.dep_multinomial_holder.estimate()
