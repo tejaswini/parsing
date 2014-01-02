@@ -5,17 +5,18 @@ from root_creator import RootCreator
 from pickle_handler import PickleHandler
 
 class InitDict:
-    def __init__(self,file_name):
-        self.file_name = file_name
+    def __init__(self,harmonic_file_name, root_val_file_name):
+        self.harmonic_file_name = harmonic_file_name
+        self.root_val_file_name = root_val_file_name
         self.dep_creator = DepCreator()
-        self.cont_creator = ContStopCreator()
-        self.stop_creator = ContStopCreator()
-        self.root_creator = RootCreator()
+        self.stop_cont_creator = ContStopCreator()
         
     def sentences(self):
         sentences = []
-        with open(self.file_name,"r") as fp:
-            sentences = fp.readlines()
+        with open(self.harmonic_file_name,"r") as fp:
+            sentences += fp.readlines()
+        with open(self.root_val_file_name,"r") as fp:
+            sentences += fp.readlines()
         return sentences
 
     def create_dict(self):
@@ -24,30 +25,22 @@ class InitDict:
             if "attach" in sent:
                 self.dep_creator.add_entry(sent)
             if "continue" in sent:
-                self.cont_creator.add_entry(sent)
+                self.stop_cont_creator.add_entry(sent)
             if "stop" in sent:
-                self.stop_creator.add_entry(sent)
+                self.stop_cont_creator.add_entry(sent)
             if "root" in sent:
-                self.root_creator.add_entry(sent)
-        # * needs Cont values
-        self.cont_creator.prob["*", "left", "adj"] = 0.1
-        self.cont_creator.prob["*", "left", "non-adj"] = 0.1
-        self.cont_creator.prob["*", "right", "adj"] = 0.9
-        self.cont_creator.prob["*", "right", "non-adj"] = 0.1
-        self.stop_creator.prob["*", "left", "adj"] = 0.9
-        self.stop_creator.prob["*", "left", "adj"] = 0.9
-        self.stop_creator.prob["*", "right", "adj"] = 0.1
-        self.stop_creator.prob["*", "right", "non-adj"] = 0.9
-        
+                self.dep_creator.add_entry(sent)
+
+        self.dep_creator.mult_holder.estimate()
+        self.stop_cont_creator.mult_holder.estimate()
 
 if __name__ == "__main__":
-    initializer = InitDict("harmonic")
+    initializer = InitDict("harmonic", "data/root_val_file.txt")
     initializer.create_dict()
-    initializer.dep_creator.dep.update(initializer.root_creator.prob)
-    pickle_handler = PickleHandler("data/harmonic_values")
-    dep = initializer.dep_creator.dep
-    stop = initializer.stop_creator.prob
-    cont = initializer.cont_creator.prob
-    pickle_handler.write_to_pickle(dep, cont, stop)
+    pickle_handler = PickleHandler("data/harmonic_values_mult")
+    dep_mult_list = initializer.dep_creator.mult_holder.mult_list
+    stop_cont_mult_list = initializer.stop_cont_creator.\
+            mult_holder.mult_list
+    pickle_handler.write_to_pickle(dep_mult_list, stop_cont_mult_list)
 
 

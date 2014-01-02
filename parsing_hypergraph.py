@@ -31,9 +31,9 @@ class DepType(namedtuple("DepType", ["type", "dir", "head_word",
 
 class ParsingAlgo:
 
-    def __init__(self, sentence, dep_mult_list, stop_cont_mult_list):
-	self.dep_mult_list = dep_mult_list
-	self.stop_cont_mult_list = stop_cont_mult_list
+    def __init__(self, sentence, dep_mult_list, stop_cont_mult_holder):
+	self.dep_mult_holder = dep_mult_holder
+	self.stop_cont_mult_holder = stop_cont_mult_holder
         self.Tri = "tri"
         self.Trap = "trap"
         self.TriStop = "triStop"
@@ -215,22 +215,22 @@ class ParsingAlgo:
 	    
     def build_potentials(self, arc):
         if(arc.is_cont and arc.modifier_word!='---'):
-            x =  self.dep_mult_list[arc.head_word, arc.dir].\
-                prob[arc.modifier_word] * self.stop_cont_mult_list\
+            x =  self.dep_mult_holder[arc.head_word, arc.dir].\
+                prob[arc.modifier_word] * self.stop_cont_mult_holder\
                 [arc.head_word, arc.dir, arc.is_adj].prob[self.cont]
             if(x == 0):
                  print "dep arc is 0"
-                 print self.dep_mult_list[arc.head_word, arc.dir].\
-                     prob[arc.modifier_word], self.stop_cont_mult_list\
-                     [arc.head_word, arc.dir, arc.is_adj].\
-                     prob[self.cont], arc.head_word, \
+                 print self.dep_mult_holder[arc.head_word, arc.dir].\
+                     prob[arc.modifier_word],
+                    self.stop_cont_mult_holder[arc.head_word, arc.dir,
+                     arc.is_adj].prob[self.cont], arc.head_word, \
                      arc.modifier_word, arc.dir
 
             return x
 
     # When head words is not empty, it means constit2
-        elif(arc.is_cont == 0):
-            return self.stop_cont_mult_list[arc.head_word, arc.dir,
+        elif arc.is_cont == 0:
+            return self.stop_cont_mult_holder[arc.head_word, arc.dir,
                                        arc.is_adj].prob[self.stop]
 
     # When the tuple does not have any values, 

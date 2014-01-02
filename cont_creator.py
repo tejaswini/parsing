@@ -1,19 +1,31 @@
 from math import exp
 from collections import defaultdict
+from mult_holder import MultinomialHolder
 
 class ContStopCreator:
 
     def __init__(self):
-        self.prob = defaultdict(float)
+        self.mult_holder = MultinomialHolder()
+        self.stop = 0
+        self.cont = 1
 
     def add_entry(self, sentence):
-      cont_type, tag, child_det, colon, value = sentence.split()
-      if "left" in cont_type:
-          self.prob[tag, "left", self.is_adj(child_det)] = \
-              exp(float(value))
-      if "right" in cont_type:
-          self.prob[tag, "right", self.is_adj(child_det)] = \
-              exp(float(value))
+      dep_type, tag, child_det, colon, value = sentence.split()
+      self.mult_holder.inc_counts(self.state(dep_type),
+        (tag, self.direction(dep_type), self.is_adj(child_det)),
+                                  exp(float(value)))
 
     def is_adj(self, child_det):
         return "adj" if child_det == "nochild" else "non-adj"
+
+    def direction(self, dep_type):
+        if "left" in dep_type:
+            return "left"
+        else:
+            return "right"
+
+    def state(self, dep_type):
+        if "stop" in dep_type:
+            return self.stop
+        else:
+            return self.cont    
