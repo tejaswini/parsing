@@ -98,20 +98,16 @@ class ParsingAlgo:
                             self.c.sr(Arc(self.words[s], self.words[t],
                             self.Right, self.is_adj(s, t, r), 1)))
 
-                
-
                 self.c[NodeType(self.Trap, self.Right, span)] = \
                    self.c.sum(nodes)
-
                 
             # Second create complete items.
                 self.c[NodeType(self.Tri, self.Left, span)] = \
                        self.c.sum([self.c[NodeType(self.TriStop,
                        self.Left, (s, r))] *
                        self.c[NodeType(self.Trap, self.Left, (r, t))]\
-                       * self.c.sr(Arc(self.words[t], "---", self.Left,
+                       * self.c.sr(Arc(self.words[t], "", self.Left,
                        self.non_adj, 1)) for r in range(s, t)])
-
 
                 if (s == 0 and t == n-1) or s!=0:
                     self.c[NodeType(self.Tri, self.Right, span)] = \
@@ -119,34 +115,31 @@ class ParsingAlgo:
                           self.Right, (s, r))] *
                           self.c[NodeType(self.TriStop, self.Right,
                                            (r, t))] *
-                         self.c.sr(Arc(self.words[s], "---", self.Right
+                         self.c.sr(Arc(self.words[s], "", self.Right
                              ,self.non_adj, 1))
                            for r in range(s + 1, t + 1)])
-
 
                 self.c[NodeType(self.TriStop, self.Left, span)] = \
                        self.c[NodeType(self.Tri,
                        self.Left, span)] * \
-                       self.c.sr(Arc(self.words[t], "---", self.Left,
+                       self.c.sr(Arc(self.words[t], "", self.Left,
                        self.is_adj(t, s, s), 0))
-
 
                 if(NodeType(self.Tri, self.Right, span) in self.c):
 
                    self.c[NodeType(self.TriStop, self.Right, span)] = \
                           self.c[NodeType(self.Tri, self.Right,
                                            span)] * \
-                        self.c.sr(Arc(self.words[s], "---", self.Right,
+                        self.c.sr(Arc(self.words[s], "", self.Right,
                            self.is_adj(s, t, t), 0))
 
         return self.c
 
     def is_adj(self, head, mod, split):
         if abs(head - split) <=1:
-            x = self.adj
+            return self.adj
         else:
-            x = self.non_adj
-        return x
+            return self.non_adj
 
     def get_hypergraph(self):
         if(not self.c._done):
@@ -174,33 +167,28 @@ class ParsingAlgo:
         depen = {}
 
         for edge in best_edges:
-            node_type, direct, span = str(edge.head.label).split()
-            span_first, span_end = span.split("-")
+            head_node = edge.head.label
 
-            if node_type == "trap" and direct == "right":
-                depen[self.words[int(span_end)], int(span_end)] = \
-                    (self.words[int(span_first)], span_first) 
+            if head_node.type == "trap" and head_node.dir == "right":
+                depen[self.words[head_node.span[1]], head_node.span[1]]                   = (self.words[head_node.span[0]], head_node.span[0])
                 
-            if node_type == "trap" and direct == "left":
-                depen[self.words[int(span_first)], int(span_first)] = \
-                    (self.words[int(span_end)], span_end)
+            if head_node.type == "trap" and head_node.dir == "left":
+               depen[self.words[head_node.span[0]], head_node.span[0]]\
+                  = (self.words[head_node.span[1]], head_node.span[1])
         return depen
 
     def get_marginals(self):
-        if self.potentials == None:
+        if not self.potentials:
             self.get_potentials()
         marginal_values = \
             ph.compute_marginals(self.hypergraph, self.potentials)
         marginals = {}
 
-	if(self.total_potentials == None):
+	if not self.total_potentials:
 		self.sum_potentials()
         root_value = self.total_potentials
 
         assert root_value > 0, "sentence is" + " ".join(self.words)
-
-        for node in self.hypergraph.nodes:
-            marginals[node.id] = marginal_values[node] / root_value
 
         for edge in self.hypergraph.edges:
            marginals[edge.id] =  marginal_values[edge] / root_value
@@ -209,13 +197,13 @@ class ParsingAlgo:
 
 
     def sum_potentials(self):
-	if(self.potentials == None):
+	if not self.potentials:
            self.get_potentials()
 	chart =  ph.inside(self.hypergraph, self.potentials)
 	self.total_potentials = chart[self.hypergraph.root]
-	    
+
     def build_potentials(self, arc):
-        if(arc.is_cont and arc.modifier_word!='---'):
+        if(arc.is_cont and arc.modifier_word!=""):
             x =  self.dep_mult_holder[arc.head_word, arc.dir].\
                 prob[arc.modifier_word] * self.stop_cont_mult_holder\
                 [arc.head_word, arc.dir, arc.is_adj].prob[self.cont]
@@ -230,7 +218,7 @@ class ParsingAlgo:
             return x
 
     # When head words is not empty, it means constit2
-        elif arc.is_cont == 0:
+        elif not arc.is_cont:
             return self.stop_cont_mult_holder[arc.head_word, arc.dir,
                                        arc.is_adj].prob[self.stop]
 
@@ -255,9 +243,7 @@ if __name__ == "__main__":
     dep_mult, stop_cont_mult = pickle_handler.init_all_dicts()
     parsing = ParsingAlgo(sentence, dep_mult, stop_cont_mult)
     parsing.get_hypergraph()
-    edge = parsing.hypergraph.edges[0]
-    parsing.display()
-#    display.HypergraphFormatter(parsing.hypergraph).to_ipython()
+#    parsing.display()
     print sentence
-    # depen = parsing.best_edges()
-    # pprint.pprint(depen)
+    depen = parsing.best_edges()
+    pprint.pprint(depen)

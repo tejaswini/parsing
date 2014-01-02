@@ -38,6 +38,8 @@ class Parser:
                "The prob are %r, %r"% (sum_probs[i],  sum_probs[i-1])
 
             self.update_parameters()
+            self.validate_multinomials(self.dep_multinomial_holder)
+            self.validate_multinomials(self.stop_multinomial_holder)
 
 	pickle_hand = PickleHandler("tmp")
 	pickle_hand.write_to_pickle(self.dep_multinomial_holder.\
@@ -49,7 +51,7 @@ class Parser:
             # or stopped taking children (0)
         for edge in edges:
             arc = edge.label
-            if arc.is_cont and arc.modifier_word != '---':
+            if arc.is_cont and arc.modifier_word != "":
                 self.stop_multinomial_holder.inc_counts(1,
                      (arc.head_word, arc.dir, arc.is_adj),
                                                  marginals[edge.id])
@@ -57,7 +59,7 @@ class Parser:
                    modifier_word,(arc.head_word, arc.dir),
                                                  marginals[edge.id])
 
-            if arc.is_cont == 0:
+            if not arc.is_cont:
                 self.stop_multinomial_holder.\
                     inc_counts(0, (arc.head_word, arc.dir, arc.is_adj),
                                marginals[edge.id])
@@ -72,6 +74,12 @@ class Parser:
             sentences = fp.readlines()
         return sentences
 
+    def validate_multinomials(self, multinomial_holder):
+        for key, mult in multinomial_holder.mult_list.iteritems():
+            total = sum(mult.prob.values())
+            assert round(total, 1) == 1.0 or round(total, 1) == 0 ,\
+               "The mult for " + str(key) + " is not totalling to 1 "\
+               + str(total)
 
 if __name__ == "__main__":
     parser = Parser("one_sent", "data/harmonic_values_mult")
