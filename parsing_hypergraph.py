@@ -31,7 +31,8 @@ class DepType(namedtuple("DepType", ["type", "dir", "head_word",
 
 class ParsingAlgo:
 
-    def __init__(self, sentence, dep_mult_list, stop_cont_mult_holder):
+    def __init__(self, sentence, dep_mult_holder,\
+                     stop_cont_mult_holder):
 	self.dep_mult_holder = dep_mult_holder
 	self.stop_cont_mult_holder = stop_cont_mult_holder
         self.Tri = "tri"
@@ -199,10 +200,10 @@ class ParsingAlgo:
         assert root_value > 0, "sentence is" + " ".join(self.words)
 
         for node in self.hypergraph.nodes:
-            marginals[node.label] = marginal_values[node] / root_value
+            marginals[node.id] = marginal_values[node] / root_value
 
         for edge in self.hypergraph.edges:
-           marginals[edge.label] =  marginal_values[edge] / root_value
+           marginals[edge.id] =  marginal_values[edge] / root_value
 
         return marginals
 
@@ -221,8 +222,8 @@ class ParsingAlgo:
             if(x == 0):
                  print "dep arc is 0"
                  print self.dep_mult_holder[arc.head_word, arc.dir].\
-                     prob[arc.modifier_word],
-                    self.stop_cont_mult_holder[arc.head_word, arc.dir,
+                     prob[arc.modifier_word], \
+                     self.stop_cont_mult_holder[arc.head_word, arc.dir,
                      arc.is_adj].prob[self.cont], arc.head_word, \
                      arc.modifier_word, arc.dir
 
@@ -243,7 +244,7 @@ class ParsingAlgo:
         marginals = self.get_marginals()
 
         for node in self.hypergraph.nodes:
-            print node.label, marginals[node.label]
+            print node.label, marginals[node.id]
 
         for edge in self.hypergraph.edges:
             print edge.label
