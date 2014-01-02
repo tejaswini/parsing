@@ -48,19 +48,19 @@ class Parser:
         # state var indicates if head word is taking more children (1)
             # or stopped taking children (0)
         for edge in edges:
-            head_word, mod_word, direct, adj, state = \
-                                   str(edge.label).split()
+            arc = edge.label
+            if arc.is_cont and arc.modifier_word != '---':
+                self.stop_multinomial_holder.inc_counts(1,
+                     (arc.head_word, arc.dir, arc.is_adj),
+                                                 marginals[arc])
+                self.dep_multinomial_holder.inc_counts(arc.\
+                   modifier_word,(arc.head_word, arc.dir),
+                                                 marginals[arc])
 
-            if state == "1" and mod_word != '---':
-                self.stop_multinomial_holder.inc_counts(1, (head_word,
-                     direct, adj), marginals[edge.label])
-                self.dep_multinomial_holder.inc_counts(mod_word,
-                     (head_word, direct), marginals[edge.label])
-
-            if state == "0":
+            if arc.is_cont == 0:
                 self.stop_multinomial_holder.\
-                    inc_counts(0, (head_word, direct, adj),
-                               marginals[edge.label])
+                    inc_counts(0, (arc.head_word, arc.dir, arc.is_adj),
+                               marginals[arc])
 
     def update_parameters(self):
 	self.dep_multinomial_holder.estimate()
