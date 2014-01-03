@@ -96,7 +96,7 @@ class ParsingAlgo:
                           self.c[NodeType(self.TriStop, self.Left,
 					  (r+1, t))] * \
                             self.c.sr(Arc(self.words[s], self.words[t],
-                         self.Right, self.is_adj(s, t, r), self.cont)))
+                         self.Right, self.is_adj(s, t, r+1), self.cont)))
 
                 self.c[NodeType(self.Trap, self.Right, span)] = \
                    self.c.sum(nodes)
@@ -234,12 +234,12 @@ class ParsingAlgo:
         for edge in self.hypergraph.edges:
             print edge.label
 
-#        self.c.show()
+        #self.c.show()
 
 
 if __name__ == "__main__":
-    sentence = "NNP NNP VBZ NNP ."
-    pickle_handler = PickleHandler("data/harmonic_values_all")
+    sentence = "NNS TO VB NNP NNS ."
+    pickle_handler = PickleHandler("final_100")
     dep_mult, stop_cont_mult = pickle_handler.init_all_dicts()
     parsing = ParsingAlgo(sentence, dep_mult, stop_cont_mult)
     parsing.get_hypergraph()
