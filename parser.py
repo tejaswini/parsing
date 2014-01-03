@@ -52,7 +52,7 @@ class Parser:
         for edge in edges:
             arc = edge.label
             if arc.is_cont and arc.modifier_word != "":
-                self.stop_multinomial_holder.inc_counts(1,
+                self.stop_multinomial_holder.inc_counts(arc.is_cont,
                      (arc.head_word, arc.dir, arc.is_adj),
                                                  marginals[edge.id])
                 self.dep_multinomial_holder.inc_counts(arc.\
@@ -61,8 +61,9 @@ class Parser:
 
             if not arc.is_cont:
                 self.stop_multinomial_holder.\
-                    inc_counts(0, (arc.head_word, arc.dir, arc.is_adj),
-                               marginals[edge.id])
+                 inc_counts(arc.is_cont,
+                 (arc.head_word, arc.dir, arc.is_adj),
+                            marginals[edge.id])
 
     def update_parameters(self):
 	self.dep_multinomial_holder.estimate()
@@ -86,6 +87,6 @@ class Parser:
                + str(total)
 
 if __name__ == "__main__":
-    parser = Parser("data/sentences_train_100.txt",
-                    "data/harmonic_init_100", True)
+    parser = Parser("one_sent",
+                    "data/harmonic_values_all", True)
     parser.run_em()

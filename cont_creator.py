@@ -6,8 +6,8 @@ class ContStopCreator:
 
     def __init__(self):
         self.mult_holder = MultinomialHolder()
-        self.stop = 0
-        self.cont = 1
+        self.stop = False
+        self.cont = True
 
     def add_entry(self, sentence):
       dep_type, tag, child_det, colon, value = sentence.split()
@@ -16,7 +16,7 @@ class ContStopCreator:
                                   exp(float(value)))
 
     def is_adj(self, child_det):
-        return "adj" if child_det == "nochild" else "non-adj"
+        return True if child_det == "nochild" else False
 
     def direction(self, dep_type):
         if "left" in dep_type:

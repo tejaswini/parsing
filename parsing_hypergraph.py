@@ -40,10 +40,10 @@ class ParsingAlgo:
         self.TriStop = "triStop"
         self.Right = "right"
         self.Left = "left"
-        self.adj = "adj"
-        self.non_adj = "non-adj"
-        self.stop = 0
-        self.cont = 1
+        self.adj = True
+        self.non_adj = False
+        self.stop = False
+        self.cont = True
         self.c = chart.ChartBuilder(
                        lambda a: a, chart.HypergraphSemiRing,
                        build_hypergraph=True)
@@ -80,7 +80,7 @@ class ParsingAlgo:
 					       self.Right, (s, r))] * \
                  self.c[NodeType(self.Tri, self.Left, (r+1, t))] *
                  self.c.sr(Arc(self.words[t], self.words[s],
-                    self.Left, self.is_adj(t, s, r), 1)))
+                    self.Left, self.is_adj(t, s, r), self.cont)))
 
                 self.c[NodeType(self.Trap, self.Left, span)] = \
                     self.c.sum(nodes)
@@ -96,7 +96,7 @@ class ParsingAlgo:
                           self.c[NodeType(self.TriStop, self.Left,
 					  (r+1, t))] * \
                             self.c.sr(Arc(self.words[s], self.words[t],
-                            self.Right, self.is_adj(s, t, r), 1)))
+                         self.Right, self.is_adj(s, t, r), self.cont)))
 
                 self.c[NodeType(self.Trap, self.Right, span)] = \
                    self.c.sum(nodes)
@@ -107,7 +107,7 @@ class ParsingAlgo:
                        self.Left, (s, r))] *
                        self.c[NodeType(self.Trap, self.Left, (r, t))]\
                        * self.c.sr(Arc(self.words[t], "", self.Left,
-                       self.non_adj, 1)) for r in range(s, t)])
+                       self.non_adj, self.cont)) for r in range(s, t)])
 
                 if (s == 0 and t == n-1) or s!=0:
                     self.c[NodeType(self.Tri, self.Right, span)] = \
@@ -116,14 +116,14 @@ class ParsingAlgo:
                           self.c[NodeType(self.TriStop, self.Right,
                                            (r, t))] *
                          self.c.sr(Arc(self.words[s], "", self.Right
-                             ,self.non_adj, 1))
+                             , self.non_adj, self.cont))
                            for r in range(s + 1, t + 1)])
 
                 self.c[NodeType(self.TriStop, self.Left, span)] = \
                        self.c[NodeType(self.Tri,
                        self.Left, span)] * \
                        self.c.sr(Arc(self.words[t], "", self.Left,
-                       self.is_adj(t, s, s), 0))
+                       self.is_adj(t, s, s), self.stop))
 
                 if(NodeType(self.Tri, self.Right, span) in self.c):
 
@@ -131,7 +131,7 @@ class ParsingAlgo:
                           self.c[NodeType(self.Tri, self.Right,
                                            span)] * \
                         self.c.sr(Arc(self.words[s], "", self.Right,
-                           self.is_adj(s, t, t), 0))
+                           self.is_adj(s, t, t), self.stop))
 
         return self.c
 
@@ -239,7 +239,7 @@ class ParsingAlgo:
 
 if __name__ == "__main__":
     sentence = "NNP NNP VBZ NNP ."
-    pickle_handler = PickleHandler("data/harmonic_values_mult")
+    pickle_handler = PickleHandler("data/harmonic_values_all")
     dep_mult, stop_cont_mult = pickle_handler.init_all_dicts()
     parsing = ParsingAlgo(sentence, dep_mult, stop_cont_mult)
     parsing.get_hypergraph()
