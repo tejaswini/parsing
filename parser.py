@@ -8,9 +8,11 @@ import math
 
 class Parser:
 
-    def __init__(self, corpus_path, initial_values_path, debug_mode):
+    def __init__(self, corpus_path, initial_values_path,
+                 final_value_path,debug_mode):
         self.sentences = self.get_sentences(corpus_path)
         self.debug_mode = debug_mode
+        self.final_value_path = final_value_path
         self.pickle_handler = PickleHandler(initial_values_path)
         dep_mult_list, stop_mult_list =\
             self.pickle_handler.init_all_dicts()
@@ -43,7 +45,7 @@ class Parser:
             self.validate_multinomials(self.dep_multinomial_holder)
             self.validate_multinomials(self.stop_multinomial_holder)
 
-	pickle_hand = PickleHandler("final_100")
+	pickle_hand = PickleHandler(self.final_value_path)
 	pickle_hand.write_to_pickle(self.dep_multinomial_holder.\
            mult_list, self.stop_multinomial_holder.mult_list)
 	pprint.pprint(sum_probs)
@@ -87,6 +89,6 @@ class Parser:
                + str(total)
 
 if __name__ == "__main__":
-    parser = Parser("one_sent",
-                    "data/harmonic_values_all", True)
+    parser = Parser("data/sentences_train_100.txt",
+                    "data/harmonic_init_100", "final_100", True)
     parser.run_em()
