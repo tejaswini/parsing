@@ -32,7 +32,7 @@ class Evaluator:
         for key, value in depen.iteritems():
             pos_tag, index = key[0], key[1]
             dep_tag, dep_index = value[0], value[1]
-            if(int(actual_dep[index-1]) == int(dep_index)):
+            if(int(actual_dep[index-1]) == dep_index):
                 self.directed_depen += 1
 
     def get_sentences(self, file_path):
@@ -42,7 +42,7 @@ class Evaluator:
         return sentences
 
 if __name__ == "__main__":
-    pickle_handler = PickleHandler("data/final_100")
+    pickle_handler = PickleHandler("data/final_train")
     dep_mult_holder, cont_stop_mult_holder =\
           pickle_handler.init_all_dicts()
     evaluator = Evaluator("data/sentences_train_100.txt",
