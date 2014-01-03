@@ -19,7 +19,7 @@ class Arc(namedtuple(
         "Arc",
         ["head_word", "modifier_word","dir", "is_adj", "is_cont"])):
     def __str__(self):
-        return "%s %s %s %s %d" % (
+        return "%s %s %s %s %s" % (
             self.head_word, self.modifier_word,
             self.dir, self.is_adj, self.is_cont)
 
