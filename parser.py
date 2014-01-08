@@ -21,7 +21,6 @@ class Parser:
         self.dep_multinomial_holder = MultinomialHolder()
         self.dep_multinomial_holder.mult_list = dep_mult_list
 
-
     def run_em(self):
         sum_probs = defaultdict(lambda: 1.0)
         for i in range(10):
@@ -89,6 +88,7 @@ class Parser:
                + str(total)
 
 if __name__ == "__main__":
-    parser = Parser("data/sentences_train_100.txt",
-                    "data/harmonic_init_100", "final_100", True)
+    parser = Parser("data/sample_sent.txt",
+                    "data/dummy", "data/dummy_final",
+                    False)
     parser.run_em()
