@@ -54,6 +54,7 @@ class ExtractSentences:
 
     def remove_punctuations(self, pos_tags, gold_dep_index, sentence):
         index_mapping = {0:0}
+        parent_mapping = {}
         i = 0
         blocked_tags = [",", ".", ":", "\'\'", "``", "(",")"]
         new_pos_tags = []
@@ -65,12 +66,17 @@ class ExtractSentences:
                 new_pos_tags.append(tag)
             else:
                 index_mapping[index+1] = None
-         
+                parent_mapping[index+1] = int(gold_dep_index[index])
+
         for index, gold_index in enumerate(gold_dep_index):
-            if(index_mapping[index+1]!=None and \
-                   index_mapping[int(gold_index)]!=None):
-                 new_gold_dep_index.\
-                     append(str(index_mapping[int(gold_index)]))
+            if index_mapping[index+1]!=None:
+                if index_mapping[int(gold_index)]!=None:
+                    new_gold_dep_index.\
+                        append(str(index_mapping[int(gold_index)]))
+                else:
+                    parent_gold_index = parent_mapping[int(gold_index)]
+                    new_gold_dep_index.\
+                        append(str(index_mapping[parent_gold_index]))
 
         if len(new_gold_dep_index) != len(new_pos_tags):
             print " ".join(new_pos_tags)
@@ -83,16 +89,14 @@ class ExtractSentences:
         assert len(new_gold_dep_index) == len(new_pos_tags)
 
         return new_pos_tags, new_gold_dep_index
-            
-        
 
     def write_to_file(self, file_name, data):
         with open(file_name, "wb") as fp:
             fp.writelines(("%s\n" % line for line in data))
             
 if __name__ == "__main__":
-    extractor = ExtractSentences("data/wsj_sec_2_21_gold_dependencies")
+    extractor = ExtractSentences("data/sec22_gold_conll")
     sentences, dependencies, dep_index = extractor.len_10_sentences()
-    extractor.write_to_file("data/sample_sent.txt", sentences)
-    extractor.write_to_file("data/sample_dep.txt", dependencies)
-    extractor.write_to_file("data/sample_dep_index.txt", dep_index)
+    extractor.write_to_file("data/sentences_dev.txt", sentences)
+    extractor.write_to_file("data/dep_dev.txt", dependencies)
+    extractor.write_to_file("data/dep_index_dev.txt", dep_index)
