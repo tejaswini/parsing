@@ -83,7 +83,7 @@ class ParsingAlgo:
 					       self.Right, (s, r))] * \
                       self.c[NodeType(self.Tri, self.Left, (r+1, t))] *
                        self.c.sr(Arc(self.words[t], self.words[s],
-                       self.Left, self.is_adj(t, s, r, self.Tri),
+                       self.Left, self.is_adj(t, s, r),
                                   self.cont)) for r in xrange(s,t)])
 
                 
@@ -93,7 +93,7 @@ class ParsingAlgo:
                           self.c[NodeType(self.TriStop, self.Left,
 					  (r+1, t))] * \
                             self.c.sr(Arc(self.words[s], self.words[t],
-                       self.Right, self.is_adj(s, t, r+1, self.Tri),
+                       self.Right, self.is_adj(s, t, r+1),
                                    self.cont)) for r in xrange(s,t)])
 
             # Second create complete items.
@@ -117,29 +117,22 @@ class ParsingAlgo:
                        self.c[NodeType(self.Tri,
                        self.Left, span)] * \
                        self.c.sr(Arc(self.words[t], "", self.Left,
-                       self.is_adj(t, s, s, self.TriStop), self.stop))
+                       self.non_adj, self.stop))
 
                 self.c[NodeType(self.TriStop, self.Right, span)] = \
                           self.c[NodeType(self.Tri, self.Right,
                                            span)] * \
                         self.c.sr(Arc(self.words[s], "", self.Right,
-                           self.is_adj(s, t, t, self.TriStop),
-                                      self.stop))
+                           self.non_adj, self.stop))
 
         return self.c
 
-    def is_adj(self, head, mod, split, const_type):
-        if const_type == self.Tri:
+   # Used only to determine if tri formed is adj or not
+    def is_adj(self, head, mod, split):
             if abs(head - split) <=1:
                 return self.adj
             else:
                 return self.non_adj
-        else:
-            if const_type == self.TriStop:
-                if head == split:
-                    return self.adj
-                else:
-                    return self.non_adj
 
     def get_hypergraph(self):
         if(not self.c._done):
