@@ -6,7 +6,6 @@ import pydecode.chart as chart
 import cPickle as pickle
 import pprint
 from pickle_handler import PickleHandler
-from memory_profiler import profile
 import sys
 
 class NodeType(namedtuple("NodeType", ["type", "dir", "span"])):
