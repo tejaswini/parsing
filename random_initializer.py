@@ -44,5 +44,5 @@ if __name__ == "__main__":
     dep_mult, stop_cont_mult = pickle_handler.init_all_dicts()
     random_init = RandomInitializer(dep_mult, stop_cont_mult)
     random_init.initialize_multinomials()
-    pickle_handler = PickleHandler("data/randominit")
+    pickle_handler = PickleHandler("data/random_init")
     pickle_handler.write_to_pickle(random_init.dep_mult_holder.mult_list, random_init.stop_cont_mult_holder.mult_list)
