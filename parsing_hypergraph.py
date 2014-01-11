@@ -139,6 +139,13 @@ class ParsingAlgo:
             self.hypergraph = self.c.finish()
         return self.hypergraph
 
+    def recompute_marginals(self, dep_mult_holder,
+                                              stop_cont_mult_holder):
+        self.dep_mult_holder = dep_mult_holder
+        self.stop_cont_mult_holder = stop_cont_mult_holder
+        self.potentials = None
+        return self.get_marginals()
+
     def get_potentials(self):
         self.get_hypergraph()
         self.potentials =  ph.InsidePotentials(self.hypergraph). \
@@ -173,7 +180,6 @@ class ParsingAlgo:
     def get_marginals(self):
         if not self.potentials:
             self.get_potentials()
-
         marginal_values = \
             ph.compute_marginals(self.hypergraph, self.potentials)
 
