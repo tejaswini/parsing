@@ -5,19 +5,21 @@ import cPickle as pickle
 from pickle_handler import PickleHandler
 from random_initializer import RandomInitializer
 from evaluator import Evaluator
+from collections import defaultdict
+import math
+from parallel_evaluator import ParallelEvaluator
 
 class ParallelParser:
 
     def __init__(self, corpus_path, no_of_instances,
-                 random_initializer, eval_corpus, gold_dep):
+                 random_initializer, parallel_evaluator):
         self.dep_mult_holder_array = []
         self.stop_mult_holder_array = []
         self.no_of_instances = no_of_instances
         self.random_initializer = random_initializer
         self.sentences = self.get_sentences(corpus_path)
-        self.eval_corpus = eval_corpus
-        self.gold_dep = gold_dep
-        self.log_likelihood = []
+        self.parallel_evaluator = parallel_evaluator
+        self.likelihood = defaultdict(lambda : defaultdict((float)))
 
     def generate_multinomials(self):
         for i in range(self.no_of_instances):
@@ -27,22 +29,30 @@ class ParallelParser:
             self.stop_mult_holder_array.append(stop_cont_mult_holder)
 
     def run_em(self):
-        for i in range(10):
+        for i in range(6):
             print "iteration is ", i
             for sentence in self.sentences:
                 parsing_algo = ParsingAlgo(sentence,
-                        self.dep_mult_holder_array[0].mult_list,
-                        self.stop_mult_holder_array[0].mult_list)
+                        self.dep_mult_holder_array[1].mult_list,
+                        self.stop_mult_holder_array[1].mult_list)
+                parsing_algo.get_hypergraph()
 
                 for instance in range(self.no_of_instances):
                     marginals = parsing_algo.recompute_marginals(\
                        self.dep_mult_holder_array[instance].mult_list,
                        self.stop_mult_holder_array[instance].mult_list)
+                    self.likelihood[i][instance] += math.log(\
+                        parsing_algo.total_potentials)
                     edges = parsing_algo.hypergraph.edges
                     self.update_counts(marginals, edges, instance)
+            if(i>0):
+                for instance in range(self.no_of_instances):
+                   assert self.likelihood[i][instance] >= self.likelihood[i-1][instance] , "iteration is " + str(i) + " instance is " + instance
+#            self.display()
             self.update_parameters()
 
     def update_counts(self, marginals, edges, instance_number):
+
         for edge in edges:
             arc = edge.label
             if arc.is_cont and arc.modifier_word != "":
@@ -67,11 +77,16 @@ class ParallelParser:
             self.stop_mult_holder_array[instance].estimate()
 
     def evaluate_sent(self):
-        for instance in range(self.no_of_instances):
-            evaluator = Evaluator(self.eval_corpus, self.gold_dep,
-            self.dep_mult_holder_array[instance].mult_list,
-            self.stop_mult_holder_array[instance].mult_list)
-            evaluator.evaluate_sentences()
+        parallel_evaluator.dep_mult_holder_array =\
+            self.dep_mult_holder_array
+        parallel_evaluator.stop_mult_holder_array =\
+            self.stop_mult_holder_array
+        parallel_evaluator.no_of_instances = self.no_of_instances
+        parallel_evaluator.evaluate_sentences()
+        print "undirected"
+        pprint.pprint(parallel_evaluator.undirected_accuracy)
+        print "directed"
+        pprint.pprint(parallel_evaluator.directed_accuracy)
 
     def get_sentences(self, file_path):
         sentences = []
@@ -79,13 +94,21 @@ class ParallelParser:
             sentences = fp.readlines()
         return sentences
 
+    def display(self):
+        pprint.pprint(parser.dep_mult_holder_array[1].mult_list["NNP","right"].prob)
+        pprint.pprint(parser.dep_mult_holder_array[0].mult_list["NNP","right"].prob)
+        pprint.pprint(parser.dep_mult_holder_array[1].mult_list["VBZ","left"].prob)
+        pprint.pprint(parser.dep_mult_holder_array[0].mult_list["VBZ","left"].prob)
+        
+
 if __name__ == "__main__":
     pickle_handler = PickleHandler("data/dummy")
     dep_mult, stop_cont_mult = pickle_handler.init_all_dicts()
     random_initializer = RandomInitializer(dep_mult, stop_cont_mult)
-    parser = ParallelParser("data/sentences_train.txt", 5,
-       random_initializer, "data/sentences_train.txt",
-       "data/dep_index_train.txt")
+    parallel_evaluator = ParallelEvaluator("data/sentences_train.txt",
+          "data/dep_index_train.txt", [], [], 0)
+    parser = ParallelParser("data/sentences_train.txt", 2,
+               random_initializer, parallel_evaluator)
     parser.generate_multinomials()
     parser.run_em()
     parser.evaluate_sent()
