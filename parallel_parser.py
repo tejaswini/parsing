@@ -11,10 +11,11 @@ from parallel_evaluator import ParallelEvaluator
 
 class ParallelParser:
 
-    def __init__(self, corpus_path, no_of_instances,
+    def __init__(self, corpus_path, no_of_iterations, no_of_instances,
                  random_initializer, parallel_evaluator):
         self.dep_mult_holder_array = []
         self.stop_mult_holder_array = []
+        self.no_of_iterations = no_of_iterations
         self.no_of_instances = no_of_instances
         self.random_initializer = random_initializer
         self.sentences = self.get_sentences(corpus_path)
@@ -29,7 +30,7 @@ class ParallelParser:
             self.stop_mult_holder_array.append(stop_cont_mult_holder)
 
     def run_em(self):
-        for i in range(5):
+        for i in range(self.no_of_iterations):
             print "iteration is ", i
             for sentence in self.sentences:
                 parsing_algo = ParsingAlgo(sentence,
@@ -79,6 +80,13 @@ class ParallelParser:
             self.dep_mult_holder_array[instance].estimate()
             self.stop_mult_holder_array[instance].estimate()
 
+    def print_final_likelihood(self):
+        final_likelihood = []
+        for i in range(self.no_of_instances):
+            final_likelihood.append(self.likelihood[self.no_of_iterations - 1][i])
+        print "final likelihood is"
+        pprint.pprint(final_likelihood)
+
     def evaluate_sent(self):
         parallel_evaluator.dep_mult_holder_array =\
             self.dep_mult_holder_array
@@ -103,9 +111,10 @@ if __name__ == "__main__":
     random_initializer = RandomInitializer(dep_mult, stop_cont_mult)
     parallel_evaluator = ParallelEvaluator("data/sentences_train.txt",
           "data/dep_index_train.txt", [], [], 0)
-    parser = ParallelParser("data/sentences_train.txt", 2,
+    parser = ParallelParser("data/sentences_train.txt", 5, 2,
                random_initializer, parallel_evaluator)
 
     parser.generate_multinomials()
     parser.run_em()
     parser.evaluate_sent()
+    parser.print_final_likelihood()
