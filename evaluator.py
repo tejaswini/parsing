@@ -82,17 +82,10 @@ if __name__ == "__main__":
     evaluator = Evaluator("data/sample_sent.txt",
        "data/sample_dep_index.txt", dep_mult_holder,
                           cont_stop_mult_holder)
-    # evaluator = Evaluator("one_word_sent",
-    #    "one_word_dep", dep_mult_holder,
-    #                       cont_stop_mult_holder)
 
     evaluator.evaluate_sentences()
     evaluator.write_to_file("incorrect_sent_rule",
                            evaluator.incorrect_sent)
-#    pprint.pprint(evaluator.incorrect_dep)
+
     with open("incorrect_dep_dict_new", "wb") as fp:
         pickle.dump(evaluator.incorrect_dep, fp)
-
-    
-    # evaluator.write_to_file("incorrect_dep_rule",
-    #                         evaluator.incorrect_dep)
