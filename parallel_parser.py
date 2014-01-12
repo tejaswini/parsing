@@ -29,7 +29,7 @@ class ParallelParser:
             self.stop_mult_holder_array.append(stop_cont_mult_holder)
 
     def run_em(self):
-        for i in range(6):
+        for i in range(5):
             print "iteration is ", i
             for sentence in self.sentences:
                 parsing_algo = ParsingAlgo(sentence,
@@ -47,14 +47,17 @@ class ParallelParser:
                     self.update_counts(marginals, edges, instance)
             if(i>0):
                 for instance in range(self.no_of_instances):
-                   assert self.likelihood[i][instance] >= self.likelihood[i-1][instance] , "iteration is " + str(i) + " instance is " + instance
-#            self.display()
+                   assert self.likelihood[i][instance] >=\
+                   self.likelihood[i-1][instance] ,"iteration is "\
+                    + str(i) + " instance is " + instance
+
             self.update_parameters()
 
     def update_counts(self, marginals, edges, instance_number):
 
         for edge in edges:
             arc = edge.label
+
             if arc.is_cont and arc.modifier_word != "":
                 self.stop_mult_holder_array[instance_number].\
                     inc_counts(arc.is_cont,
@@ -94,13 +97,6 @@ class ParallelParser:
             sentences = fp.readlines()
         return sentences
 
-    def display(self):
-        pprint.pprint(parser.dep_mult_holder_array[1].mult_list["NNP","right"].prob)
-        pprint.pprint(parser.dep_mult_holder_array[0].mult_list["NNP","right"].prob)
-        pprint.pprint(parser.dep_mult_holder_array[1].mult_list["VBZ","left"].prob)
-        pprint.pprint(parser.dep_mult_holder_array[0].mult_list["VBZ","left"].prob)
-        
-
 if __name__ == "__main__":
     pickle_handler = PickleHandler("data/dummy")
     dep_mult, stop_cont_mult = pickle_handler.init_all_dicts()
@@ -109,6 +105,7 @@ if __name__ == "__main__":
           "data/dep_index_train.txt", [], [], 0)
     parser = ParallelParser("data/sentences_train.txt", 2,
                random_initializer, parallel_evaluator)
+
     parser.generate_multinomials()
     parser.run_em()
     parser.evaluate_sent()

@@ -144,6 +144,7 @@ class ParsingAlgo:
         self.dep_mult_holder = dep_mult_holder
         self.stop_cont_mult_holder = stop_cont_mult_holder
         self.potentials = None
+        self.total_potentials = None
         return self.get_marginals()
 
     def get_potentials(self):
@@ -171,7 +172,7 @@ class ParsingAlgo:
             if head_node.type == "trap" and head_node.dir == "right":
               depen[self.words[head_node.span[1]], head_node.span[1]]\
                    = (self.words[head_node.span[0]], head_node.span[0])
-                
+ 
             if head_node.type == "trap" and head_node.dir == "left":
                depen[self.words[head_node.span[0]], head_node.span[0]]\
                   = (self.words[head_node.span[1]], head_node.span[1])
@@ -180,6 +181,7 @@ class ParsingAlgo:
     def get_marginals(self):
         if not self.potentials:
             self.get_potentials()
+
         marginal_values = \
             ph.compute_marginals(self.hypergraph, self.potentials)
 
@@ -225,7 +227,7 @@ class ParsingAlgo:
         marginals = self.get_marginals()
 
         for edge in self.hypergraph.edges:
-            print edge.label#, marginals[edge.id]
+            print edge.label, marginals[edge.id], self.potentials[edge]
 
         for node in self.hypergraph.nodes:
             print node.label
