@@ -94,7 +94,7 @@ The psuedocode of the algorithm is given in Figure 1. The dynamic programming ta
 \section{Algorithm}
 
 
-An open source library called PyDecode is used to build a hypergraph, with all the 3 constituents of the Eisner's parsing algorithm as its nodes. An edge has head word, modifier word, direction, adjacency and state values stored in it. The direction indicates the direction in which the edge is being formed. The adjacency indicates if the modifier word is the first child of the head word, in which case it is ``adj``, or not, in which case it is ``non-adj``. If an edge does not have a modifier, the modifier word is ``---``.The edges of the hypergraph are assigned weights according to algorithm given in Figure 2:
+An open source library called PyDecode is used to build a hypergraph, with all the 3 constituents of the Eisner's parsing algorithm as its nodes. An edge has head word, modifier word, direction, adjacency and state values stored in it. The direction indicates the direction in which the edge is being formed. The adjacency indicates if the modifier word is the first child of the head word, in which case it is ``adj``, or not, in which case it is ``non-adj``. If an edge does not have a modifier, the modifier word is ``.The edges of the hypergraph are assigned weights according to algorithm given in Figure 2:
 
 \begin{algorithm}
   \label{Figure 2}
@@ -162,28 +162,25 @@ We are given marginals $p(E)$ \\
 
 The Estimation Step involves
 
- \[stopCounts(h, dir, \mathrm{ADJ}= 1) \gets 
+ \[stopCounts(h, dir, \mathrm{ADJ}= 1, CONT = 0) \gets 
   \sum p(\mathrm{E(h, dir, ADJ=1, CONT = 0)}) \]
 
- \[stopCounts(h, dir, \mathrm{ADJ}= 0) \gets 
-  \sum p(\mathrm{E(h, dir, ADJ=0, CONT = 0)}) \]
-
-\[depCounts(h, m, dir, \mathrm{ADJ}) \gets
- \sum p(\mathrm{E(h, m!=--, dir, ADJ, CONT = 1)}) \]
+ \[stopCounts(h, dir, \mathrm{ADJ}= 1, CONT = 1) \gets 
+  \sum p(\mathrm{E(h, dir, ADJ=1, CONT = 1)}) \]
 
 \[depCounts(h, m, dir) \gets
- \sum\limits_{ADJ=\{0,1\}} p(\mathrm{E(h, m!=--, dir, CONT = 1)}) \]
+ \sum\limits_{ADJ=\{0,1\}} p(\mathrm{E(h, m!='', dir, CONT = 1)}) \]
 
 Maximization Step involves
 
   \[stopProb(h, dir, \mathrm{ADJ}) \gets 
-  \frac{stopCounts(h, dir, \mathrm{ADJ})}{
-    \sum_{m \in {\cal W}} depCounts(h, m, dir, ADJ) + stopCounts(h, dir, \mathrm{ADJ})} 
+  \frac{stopCounts(h, dir, \mathrm{ADJ}, CONT=0)}{
+     stopCounts(h, dir, ADJ, CONT=1) + stopCounts(h, dir, \mathrm{ADJ}, CONT=0)} 
   \]
 
   \[contProb(h, dir, \mathrm{ADJ}) \gets 
-  \frac{\sum_{m \in {\cal W}} depCounts(h, m, dir, ADJ)}{
-    \sum_{m \in {\cal W}} depCounts(h, m, dir, ADJ) + stopCounts(h, dir, \mathrm{ADJ})} 
+  \frac{stopCounts(h, dir, ADJ, CONT=1)}{
+     stopCounts(h, dir, ADJ, CONT=1) + stopCounts(h, dir, ADJ, CONT=0)} 
   \]
 
   \[depProb(h, m, dir) \gets 
