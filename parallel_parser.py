@@ -111,7 +111,7 @@ if __name__ == "__main__":
     random_initializer = RandomInitializer(dep_mult, stop_cont_mult)
     parallel_evaluator = ParallelEvaluator("data/sentences_train.txt",
           "data/dep_index_train.txt", [], [], 0)
-    parser = ParallelParser("data/sentences_train.txt", 5, 2,
+    parser = ParallelParser("data/sentences_train.txt", 10, 40,
                random_initializer, parallel_evaluator)
 
     parser.generate_multinomials()
