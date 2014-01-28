@@ -76,11 +76,11 @@ class Evaluator:
             fp.writelines(("%s\n" % line for line in data))
 
 if __name__ == "__main__":
-    pickle_handler = PickleHandler("data/dummy_final")
+    pickle_handler = PickleHandler("data/harmonic_final")
     dep_mult_holder, cont_stop_mult_holder =\
           pickle_handler.init_all_dicts()
-    evaluator = Evaluator("data/sample_sent.txt",
-       "data/sample_dep_index.txt", dep_mult_holder,
+    evaluator = Evaluator("data/sentences_dev.txt",
+       "data/dep_index_dev.txt", dep_mult_holder,
                           cont_stop_mult_holder)
 
     evaluator.evaluate_sentences()

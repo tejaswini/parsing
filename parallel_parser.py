@@ -114,12 +114,13 @@ class ParallelParser:
         return sentences
 
 if __name__ == "__main__":
-    pickle_handler = PickleHandler("/home/tp2394/parsing/data/dummy")
+    pickle_handler = PickleHandler("data/dummy")
     dep_mult, stop_cont_mult = pickle_handler.init_all_dicts()
     random_initializer = RandomInitializer(dep_mult, stop_cont_mult)
-    parallel_evaluator = ParallelEvaluator("/home/tp2394/parsing/data/sentences_dev.txt",
-          "/home/tp2394/parsing/data/dep_index_dev.txt", [], [], 0)
-    parser = ParallelParser("/home/tp2394/parsing/data/sentences_train.txt", 60, 40,
+    parallel_evaluator = ParallelEvaluator("data/sentences_train.txt",
+          "data/dep_index_train.txt", [], [], 0)
+
+    parser = ParallelParser("data/sentences_train.txt", 10, 60,
                random_initializer, parallel_evaluator)
 
     parser.generate_multinomials()
@@ -128,5 +129,5 @@ if __name__ == "__main__":
     pprint.pprint(parser.directed_acc)
     print "undirected"
     pprint.pprint(parser.undirected_acc)
-#    parser.evaluate_sent()
+    parser.evaluate_sent()
 #    parser.print_final_likelihood()

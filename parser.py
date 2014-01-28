@@ -88,7 +88,7 @@ class Parser:
                + str(total)
 
 if __name__ == "__main__":
-    parser = Parser("data/sample_sent.txt",
-                    "data/dummy", "data/dummy_final",
+    parser = Parser("data/sentences_train.txt",
+                    "data/harmonic_init_train", "data/harmonic_final1",
                     False)
     parser.run_em()

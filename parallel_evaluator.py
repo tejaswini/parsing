@@ -19,6 +19,15 @@ class ParallelEvaluator:
         self.no_of_instances = no_of_instances
         self.total_deps = 0
 
+    def reinitialize(self, dep_mult_holder_array,
+                     stop_mult_holder_array, no_of_instances):
+        self.directed_accuracy = []
+        self.undirected_accuracy = []
+        self.stop_mult_holder_array = stop_mult_holder_array
+        self.dep_mult_holder_array = dep_mult_holder_array
+        self.no_of_instances = no_of_instances
+        
+
     def evaluate_sentences(self):
         for i, sentence in enumerate(self.sentences):
             actual_dep = self.dep_index[i].strip()
@@ -85,7 +94,7 @@ if __name__ == "__main__":
         mult_holder.mult_list = stop_cont_mult
         stop_mult_array.append(mult_holder)
         
-        parallel_evaluator = ParallelEvaluator("data/sentences_train.txt",  "data/dep_index_train.txt", dep_mult_array, stop_mult_array, 2)
+        parallel_evaluator = ParallelEvaluator("data/sentences_dev.txt",  "data/dep_index_dev.txt", dep_mult_array, stop_mult_array, 2)
 
         parallel_evaluator.evaluate_sentences()
         pprint.pprint(parallel_evaluator.undirected_accuracy)
