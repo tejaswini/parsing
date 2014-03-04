@@ -35,7 +35,7 @@ class InitDict:
         self.stop_cont_creator.mult_holder.estimate()
 
 if __name__ == "__main__":
-    initializer = InitDict("harmonic", "data/root_val_file.txt")
+    initializer = InitDict("data/harmonic", "data/root_val_file.txt")
     initializer.create_dict()
     pickle_handler = PickleHandler("data/harmonic_values_mult")
     dep_mult_list = initializer.dep_creator.mult_holder.mult_list

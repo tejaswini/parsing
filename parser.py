@@ -48,6 +48,7 @@ class Parser:
 	pickle_hand.write_to_pickle(self.dep_multinomial_holder.\
            mult_list, self.stop_multinomial_holder.mult_list)
 	pprint.pprint(sum_probs)
+    
 
     def update_counts(self, marginals, edges):
         for edge in edges:
@@ -88,7 +89,7 @@ class Parser:
                + str(total)
 
 if __name__ == "__main__":
-    parser = Parser("data/sample_sent.txt",
-                    "data/dummy", "data/dummy_final",
+    parser = Parser("data/sentences_train.txt",
+                    "data/harmonic_values_mult", "data/harmonic_final",
                     False)
     parser.run_em()
