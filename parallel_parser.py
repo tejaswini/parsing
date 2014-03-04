@@ -21,6 +21,8 @@ class ParallelParser:
         self.sentences = self.get_sentences(corpus_path)
         self.parallel_evaluator = parallel_evaluator
         self.likelihood = defaultdict(lambda : defaultdict((float)))
+        self.directed_acc = defaultdict(float)
+        self.undirected_acc = defaultdict(float)
 
     def generate_multinomials(self):
         for i in range(self.no_of_instances):
@@ -42,15 +44,17 @@ class ParallelParser:
                     marginals = parsing_algo.recompute_marginals(\
                        self.dep_mult_holder_array[instance].mult_list,
                        self.stop_mult_holder_array[instance].mult_list)
-                    self.likelihood[i][instance] += math.log(\
+                    self.likelihood[instance][i] += math.log(\
                         parsing_algo.total_potentials)
                     edges = parsing_algo.hypergraph.edges
                     self.update_counts(marginals, edges, instance)
             if(i>0):
                 for instance in range(self.no_of_instances):
-                   assert self.likelihood[i][instance] >=\
-                   self.likelihood[i-1][instance] ,"iteration is "\
+                   assert self.likelihood[instance][i] >=\
+                   self.likelihood[instance][i-1] ,"iteration is "\
                     + str(i) + " instance is " + instance
+
+            self.calc_avg_accuracy(i)
 
             self.update_parameters()
 
@@ -81,23 +85,27 @@ class ParallelParser:
             self.stop_mult_holder_array[instance].estimate()
 
     def print_final_likelihood(self):
-        final_likelihood = []
         for i in range(self.no_of_instances):
-            final_likelihood.append(self.likelihood[self.no_of_iterations - 1][i])
-        print "final likelihood is"
-        pprint.pprint(final_likelihood)
+            print "likelihood " + str(i) + " is"
+            pprint.pprint(self.likelihood[i])
+
+    def calc_avg_accuracy(self, iteration_num):
+        self.evaluate_sent()
+        self.directed_acc[iteration_num] = \
+          sum(parallel_evaluator.directed_accuracy) \
+            / self.no_of_instances
+        self.undirected_acc[iteration_num] = \
+          sum(parallel_evaluator.undirected_accuracy) \
+           / self.no_of_instances
 
     def evaluate_sent(self):
-        parallel_evaluator.dep_mult_holder_array =\
-            self.dep_mult_holder_array
-        parallel_evaluator.stop_mult_holder_array =\
-            self.stop_mult_holder_array
-        parallel_evaluator.no_of_instances = self.no_of_instances
+        parallel_evaluator.reinitialize(self.dep_mult_holder_array,
+                    self.stop_mult_holder_array, self.no_of_instances)
         parallel_evaluator.evaluate_sentences()
-        print "undirected"
-        pprint.pprint(parallel_evaluator.undirected_accuracy)
-        print "directed"
-        pprint.pprint(parallel_evaluator.directed_accuracy)
+        # print "undirected"
+        # pprint.pprint(parallel_evaluator.undirected_accuracy)
+        # print "directed"
+        # pprint.pprint(parallel_evaluator.directed_accuracy)
 
     def get_sentences(self, file_path):
         sentences = []
@@ -117,5 +125,9 @@ if __name__ == "__main__":
 
     parser.generate_multinomials()
     parser.run_em()
+    print "directed"
+    pprint.pprint(parser.directed_acc)
+    print "undirected"
+    pprint.pprint(parser.undirected_acc)
     parser.evaluate_sent()
-    parser.print_final_likelihood()
+#    parser.print_final_likelihood()

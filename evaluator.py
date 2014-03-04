@@ -79,6 +79,7 @@ if __name__ == "__main__":
     pickle_handler = PickleHandler("data/harmonic_final")
     dep_mult_holder, cont_stop_mult_holder =\
           pickle_handler.init_all_dicts()
+
     evaluator = Evaluator("data/sentences_train.txt",
        "data/dep_index_train.txt", dep_mult_holder,
                           cont_stop_mult_holder)
