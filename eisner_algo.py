@@ -16,18 +16,25 @@ class EisnerAlgo:
 
     def eisner_first_order(self, sentence):
         n = len(sentence)
-        coder = np.arange((self.num_shapes * self.num_dir * n * n), dtype=np.int64) \
-        .reshape([self.num_shapes, self.num_dir, n, n])
-        self.out = np.arange(n * n * self.num_shapes * self.num_dir * 2, dtype=np.int64).reshape([self.num_shapes, self.num_dir, 2, n, n])
+        coder = np.arange((self.num_shapes * self.num_dir * n * n),
+                dtype=np.int64).reshape([self.num_shapes, self.num_dir, n, n])
+        self.out = np.arange(n * n * self.num_shapes * self.num_dir * 2,
+                 dtype=np.int64).reshape([self.num_shapes, self.num_dir, 2, n, n])
         chart = pydecode.ChartBuilder(coder, self.out)
 
         chart.init(np.diag(coder[self.tri, self.right]).copy())
         chart.init(np.diag(coder[self.tri, self.left, 1:, 1:]).copy())
 
         for direction in range(self.num_dir):
-            for tri, triStop, index in zip(np.diag(coder[self.tri, direction, 1:, 1:]), np.diag(coder[self.tri_stop, direction, 1:, 1:]), range(1,n)):
+            for tri, triStop, index in zip(np.diag(coder[self.tri, direction]),
+                        np.diag(coder[self.tri_stop, direction]), range(n)):
 
-                chart.set(triStop, [[tri]], labels=[np.int64(self.out[2, direction, 0, index, index])])
+                print "index is " + str(index)
+                if(index == 0):
+                    continue
+
+                chart.set(triStop, [[tri]], labels=[np.int64(self.out[2,
+                                         direction, 0, index, index])])
 
         for k in range(1, n):
             for s in range(n):
@@ -37,42 +44,45 @@ class EisnerAlgo:
 
             # First create incomplete items.
                 out_ind = np.zeros([t-s], dtype=np.int64)
-                if s != 0:
-                    label_indices = self.compute_label_indices(1, self.left, t, s)
+                if s!=0:
+                    label_indices = np.zeros(1, dtype=np.int64)
+                    label_indices.fill(self.out[self.trap, self.left,
+                                                self.non_adj, s, t])
                     chart.set_t(coder[self.trap, self.left,  s,  t],
-                            coder[self.tri_stop,  self.right, s,  s:t],
-                            coder[self.tri,  self.left,  s+1:t+1, t],
+                            coder[self.tri_stop,  self.right, s,  s:s+1],
+                            coder[self.tri,  self.left,  s+1:s+2, t],
                             labels=label_indices)
 
-                label_indices = self.compute_label_indices(1, self.right, s, t)
+                label_indices = self.compute_label_indices(self.trap, self.right,
+                                                           s, t)
 
                 chart.set_t(coder[self.trap, self.right, s, t],
                         coder[self.tri,  self.right, s,  s:t],
                         coder[self.tri_stop,  self.left,  s+1:t+1, t],
                         labels= label_indices)
 
-                if s != 0:
-                    out_ind.fill(self.out[0, self.left, 0, t, t])
+                if s!=0:
+                    out_ind.fill(self.out[self.tri, self.left, self.non_adj, t, t])
                     chart.set_t(coder[self.tri,  self.left,  s, t],
                             coder[self.tri_stop,  self.left,  s, s:t],
                             coder[self.trap, self.left,  s:t, t],
                             labels= label_indices)
 
-
-                    out_ind.fill(self.out[2, self.left, self.adj, t, t])
+                    out_ind.fill(self.out[self.tri_stop, self.left, self.non_adj,
+                                          t, t])
                     chart.set(coder[self.tri_stop, self.left,  s, t],
                         [[coder[self.tri,  self.left, s, t]]],
                         labels= out_ind)
 
 
-                out_ind.fill(self.out[0, self.right, self.adj, s, s])
+                out_ind.fill(self.out[self.tri, self.right, self.non_adj, s, s])
                 chart.set_t(coder[self.tri,  self.right, s, t],
                         coder[self.trap, self.right, s,  s+1:t+1],
                         coder[self.tri_stop,  self.right, s+1:t+1, t],
                         labels= label_indices)
             
                 if s!=0 or (s==0 and t==n-1):
-                    out_ind.fill(self.out[2, self.right, self.adj, s, s])
+                    out_ind.fill(self.out[2, self.right, self.non_adj, s, s])
                     chart.set(coder[self.tri_stop, self.right,  s, t],
                         [[coder[self.tri,  self.right, s, t]]],
                         labels=out_ind)
@@ -90,9 +100,10 @@ class EisnerAlgo:
             reshape(abs(head-mod), 5)
         indices[:,2] = self.compute_adj(head, mod)
         if(indices.shape[0] == 1):
-            return np.array([self.out[indices[0,0], indices[0,1], indices[0,2], indices[0, 3], indices[0, 4]]])
-        return self.out[indices[:,0].tolist(),indices[:,1].tolist(), indices[:,2].tolist(), indices[:,3].tolist(), indices[:,4].tolist()]
-        
+            return np.array([self.out[indices[0,0], indices[0,1], indices[0,2],
+                                      indices[0, 3], indices[0, 4]]])
+        return self.out[indices[:,0].tolist(),indices[:,1].tolist(),
+              indices[:,2].tolist(), indices[:,3].tolist(), indices[:,4].tolist()]
 
     def compute_adj(self, head, mod):
         if(head > mod):
