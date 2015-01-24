@@ -29,7 +29,6 @@ class EisnerAlgo:
             for tri, triStop, index in zip(np.diag(coder[self.tri, direction]),
                         np.diag(coder[self.tri_stop, direction]), range(n)):
 
-                print "index is " + str(index)
                 if(index == 0):
                     continue
 
