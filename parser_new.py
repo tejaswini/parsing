@@ -17,7 +17,7 @@ class Parser:
         key_size = len(self.tag_dict)
         self.counts = np.empty((self.num_shapes, self.num_dir, self.num_adj, key_size, key_size))
         self.counts_attach = np.empty((self.num_shapes, self.num_dir, self.num_adj, key_size))
-        self.prob_attach = np.random.random(self.num_shapes * self.num_dir * self.num_adj * key_size * key_size).reshape([(self.num_shapes, self.num_dir, self.num_adj, key_size, key_size])
+        self.prob_attach = np.random.random(self.num_shapes * self.num_dir * self.num_adj * key_size * key_size).reshape([self.num_shapes, self.num_dir, self.num_adj, key_size, key_size])
         self.prob = np.random.random(self.num_shapes * self.num_dir * self.num_adj * key_size * key_size).reshape([self.num_shapes, self.num_dir, self.num_adj, key_size, key_size])
         np.seterr(divide='ignore', invalid='ignore')
 
