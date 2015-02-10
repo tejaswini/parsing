@@ -7,14 +7,14 @@ class ContStopCreator:
 
     def __init__(self):
         self.constants = Constants()
-        self.counts_cont = np.zeros(self.constants.num_dir * self.constants.\
+        self.prob_cont = np.zeros(self.constants.num_dir * self.constants.\
            num_adj * self.constants.stop_cont* self.constants.key_size).reshape([\
            self.constants.num_dir, self.constants.num_adj, self.constants.key_size,
            self.constants.stop_cont])
 
     def add_entry(self, sentence):
       dep_type, tag, child_det, colon, value = sentence.split()
-      self.counts_cont[self.direction(dep_type), self.is_adj(child_det),
+      self.prob_cont[self.direction(dep_type), self.is_adj(child_det),
           self.constants.tag_dict[tag], self.state(dep_type)] +=  exp(float(value))
 
     def is_adj(self, child_det):

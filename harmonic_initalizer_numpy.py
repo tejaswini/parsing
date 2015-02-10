@@ -35,6 +35,4 @@ if __name__ == "__main__":
     initializer = HarmonicInitializer("data/harmonic", "data/root_val_file.txt")
     initializer.initialize_harmonic_values()
     pickle_handler = PickleHandler("data/harmonic_values_numpy")
-    dep_mult_list = initializer.dep_creator.counts_attach
-    stop_cont_mult_list = initializer.stop_cont_creator.counts_cont
-    pickle_handler.write_to_pickle(dep_mult_list, stop_cont_mult_list, "data/harmonic_values_numpy")
+    pickle_handler.write_to_pickle(initializer.dep_creator.prob_attach, initializer.stop_cont_creator.prob_cont, "data/harmonic_values_numpy")
