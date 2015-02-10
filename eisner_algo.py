@@ -124,8 +124,7 @@ class EisnerAlgo:
         right_indices = np.where(direction == 0)
         left_indices = np.where(direction == 1)
 
-        depen = np.empty(modifier.size)
-        depen.fill(-1)
+        depen = np.full(modifier.size, -1)
         temp_mod = modifier[right_indices] - 1
         depen[temp_mod.tolist()] = head[right_indices].tolist()
         temp_mod = modifier[left_indices] - 1
