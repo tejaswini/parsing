@@ -13,8 +13,11 @@ class EisnerAlgo:
         self.right = 0; self.left = 1
         self.graph = None
         self.out = []
+        self.weights = None
+        self.sentence = None
 
     def eisner_first_order(self, sentence):
+        self.sentence = sentence
         n = len(sentence)
         coder = np.arange((self.num_shapes * self.num_dir * n * n),
                 dtype=np.int64).reshape([self.num_shapes, self.num_dir, n, n])
@@ -29,11 +32,11 @@ class EisnerAlgo:
             for tri, triStop, index in zip(np.diag(coder[self.tri, direction]),
                         np.diag(coder[self.tri_stop, direction]), range(n)):
 
-                if(index == 0):
+               if(index == 0):
                     continue
 
-                chart.set(triStop, [[tri]], labels=[np.int64(self.out[2,
-                                         direction, 0, index, index])])
+               chart.set(triStop, [[tri]], labels=[np.int64(self.out[self.tri_stop,
+                                         direction, self.adj, index, index])])
 
         for k in range(1, n):
             for s in range(n):
@@ -44,55 +47,107 @@ class EisnerAlgo:
             # First create incomplete items.
                 out_ind = np.zeros([t-s], dtype=np.int64)
                 if s!=0:
-                    label_indices = np.zeros(1, dtype=np.int64)
-                    label_indices.fill(self.out[self.trap, self.left,
-                                                self.non_adj, s, t])
+                    label_indices = self.compute_label_indices(self.trap,
+                                     self.left, t , s)
+                    
                     chart.set_t(coder[self.trap, self.left,  s,  t],
-                            coder[self.tri_stop,  self.right, s,  s:s+1],
-                            coder[self.tri,  self.left,  s+1:s+2, t],
+                            coder[self.tri_stop,  self.right, s,  s:t],
+                            coder[self.tri,  self.left,  s+1:t+1, t],
                             labels=label_indices)
 
                 label_indices = self.compute_label_indices(self.trap, self.right,
                                                            s, t)
-
                 chart.set_t(coder[self.trap, self.right, s, t],
                         coder[self.tri,  self.right, s,  s:t],
                         coder[self.tri_stop,  self.left,  s+1:t+1, t],
                         labels= label_indices)
 
                 if s!=0:
-                    out_ind.fill(self.out[self.tri, self.left, self.non_adj, t, t])
+                    label_indices = self.compute_label_indices(self.tri, self.left,
+                                                           t, s)
+
                     chart.set_t(coder[self.tri,  self.left,  s, t],
                             coder[self.tri_stop,  self.left,  s, s:t],
-                            coder[self.trap, self.left,  s:t, t],
-                            labels= label_indices)
+                            coder[self.trap, self.left,  s:t, t])
+                    
+                    label_indices = self.compute_label_indices(self.tri_stop,
+                                     self.left, s, t)
 
-                    out_ind.fill(self.out[self.tri_stop, self.left, self.non_adj,
-                                          t, t])
                     chart.set(coder[self.tri_stop, self.left,  s, t],
                         [[coder[self.tri,  self.left, s, t]]],
-                        labels= out_ind)
+                        labels= label_indices)
 
 
-                out_ind.fill(self.out[self.tri, self.right, self.non_adj, s, s])
+                label_indices = self.compute_label_indices(self.tri,
+                                     self.right, s, t)
+
                 chart.set_t(coder[self.tri,  self.right, s, t],
                         coder[self.trap, self.right, s,  s+1:t+1],
-                        coder[self.tri_stop,  self.right, s+1:t+1, t],
-                        labels= label_indices)
+                        coder[self.tri_stop,  self.right, s+1:t+1, t])
             
                 if s!=0 or (s==0 and t==n-1):
-                    out_ind.fill(self.out[2, self.right, self.non_adj, s, s])
+                    label_indices = self.compute_label_indices(self.tri_stop,
+                                     self.right, s, t)
+
                     chart.set(coder[self.tri_stop, self.right,  s, t],
                         [[coder[self.tri,  self.right, s, t]]],
-                        labels=out_ind)
+                        labels=label_indices)
 
         self.graph = chart.finish()
         return self.graph
 
+    def compute_weights(self, label_scores):
+        if self.weights == None:
+            self.weights = pydecode.transform(self.graph, label_scores)
+        return self.weights
+            
     def compute_marginals(self, label_scores):
-        weights = pydecode.transform(self.graph, label_scores)
-        edge_marginals = pydecode.marginals(self.graph, weights)
+        self.compute_weights(label_scores)
+        edge_marginals = pydecode.marginals(self.graph, self.weights)
         return edge_marginals
+
+    def best_path(self, label_scores):
+        self.compute_weights(label_scores)
+        return pydecode.best_path(self.graph, self.weights)
+
+    def best_edges(self, label_scores):
+        path = self.best_path(label_scores)
+        best_edges = path.edges
+        heads = np.array([], dtype=np.int64)
+
+        for edge in best_edges:
+            heads = np.append(heads, edge.head.label)
+
+        shapes, direction, head, modifier =\
+            self.get_indices_of_heads(heads, len(self.sentence))
+
+        right_indices = np.where(direction == 0)
+        left_indices = np.where(direction == 1)
+
+        depen = np.empty(modifier.size)
+        depen.fill(-1)
+        temp_mod = modifier[right_indices] - 1
+        depen[temp_mod.tolist()] = head[right_indices].tolist()
+        temp_mod = modifier[left_indices] - 1
+        depen[temp_mod.tolist()] = head[left_indices].tolist()
+        return depen
+
+    def get_indices_of_heads(self, heads, n):
+        shapes = heads / (n*n*2)
+        indices = np.where(shapes == 1)
+
+        x = heads - (shapes * n*n*2)
+        direction = x / (n*n)
+
+        x = x%(n*n*2)
+        is_adj = x / (n*n)
+    
+        x = x - (is_adj*n*n)
+        row = x/n
+
+        column = x%n
+
+        return shapes[indices], direction[indices], row[indices], column[indices]
 
     def compute_label_indices(self, shape, direction, head, mod):
         indices = np.tile([shape, direction, 0, head, mod], abs(head-mod)).\
