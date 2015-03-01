@@ -38,6 +38,8 @@ class EisnerAlgo:
                chart.set(triStop, [[tri]], labels=[np.int64(self.out[self.tri_stop,
                                          direction, self.adj, index, index])])
 
+        self.all_label_indices = np.array([],dtype=np.int64)
+
         for k in range(1, n):
             for s in range(n):
                 t = k + s
@@ -49,6 +51,8 @@ class EisnerAlgo:
                 if s!=0:
                     label_indices = self.compute_label_indices(self.trap,
                                      self.left, t , s)
+
+                    self.all_label_indices = np.append(self.all_label_indices, label_indices)
                     
                     chart.set_t(coder[self.trap, self.left,  s,  t],
                             coder[self.tri_stop,  self.right, s,  s:t],
@@ -57,6 +61,7 @@ class EisnerAlgo:
 
                 label_indices = self.compute_label_indices(self.trap, self.right,
                                                            s, t)
+                self.all_label_indices = np.append(self.all_label_indices, label_indices)
                 chart.set_t(coder[self.trap, self.right, s, t],
                         coder[self.tri,  self.right, s,  s:t],
                         coder[self.tri_stop,  self.left,  s+1:t+1, t],
@@ -65,6 +70,7 @@ class EisnerAlgo:
                 if s!=0:
                     label_indices = self.compute_label_indices(self.tri, self.left,
                                                            t, s)
+                    self.all_label_indices = np.append(self.all_label_indices, label_indices)
 
                     chart.set_t(coder[self.tri,  self.left,  s, t],
                             coder[self.tri_stop,  self.left,  s, s:t],
@@ -72,6 +78,8 @@ class EisnerAlgo:
                     
                     label_indices = self.compute_label_indices(self.tri_stop,
                                      self.left, s, t)
+                    
+                    self.all_label_indices = np.append(self.all_label_indices, label_indices)
 
                     chart.set(coder[self.tri_stop, self.left,  s, t],
                         [[coder[self.tri,  self.left, s, t]]],
@@ -80,6 +88,7 @@ class EisnerAlgo:
 
                 label_indices = self.compute_label_indices(self.tri,
                                      self.right, s, t)
+                self.all_label_indices = np.append(self.all_label_indices, label_indices)
 
                 chart.set_t(coder[self.tri,  self.right, s, t],
                         coder[self.trap, self.right, s,  s+1:t+1],
@@ -88,6 +97,7 @@ class EisnerAlgo:
                 if s!=0 or (s==0 and t==n-1):
                     label_indices = self.compute_label_indices(self.tri_stop,
                                      self.right, s, t)
+                    self.all_label_indices = np.append(self.all_label_indices, label_indices)
 
                     chart.set(coder[self.tri_stop, self.right,  s, t],
                         [[coder[self.tri,  self.right, s, t]]],
@@ -100,6 +110,9 @@ class EisnerAlgo:
         if self.weights == None:
             self.weights = pydecode.transform(self.graph, label_scores)
         return self.weights
+
+    def reset_values(self):
+        self.weights = None
             
     def compute_marginals(self, label_scores):
         self.compute_weights(label_scores)
@@ -124,18 +137,16 @@ class EisnerAlgo:
         right_indices = np.where(direction == 0)
         left_indices = np.where(direction == 1)
 
-        depen = np.full(modifier.size, -1)
-        temp_mod = modifier[right_indices] - 1
-        depen[temp_mod.tolist()] = head[right_indices].tolist()
-        temp_mod = modifier[left_indices] - 1
-        depen[temp_mod.tolist()] = head[left_indices].tolist()
+        depen = np.full(len(self.sentence), -1, dtype=np.int64)
+        depen[modifier[right_indices].tolist()] = head[right_indices].tolist()
+        depen[head[left_indices].tolist()] = modifier[left_indices].tolist()
         return depen
 
     def get_indices_of_heads(self, heads, n):
         shapes = heads / (n*n*2)
         indices = np.where(shapes == 1)
 
-        x = heads - (shapes * n*n*2)
+        x = heads - (shapes * n * n * 2)
         direction = x / (n*n)
 
         x = x%(n*n*2)

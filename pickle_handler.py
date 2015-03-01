@@ -11,6 +11,14 @@ class PickleHandler:
 			pickle.dump(dep_mult_list, fp)
 			pickle.dump(stop_cont_mult_list, fp)
 
+    def write_prob_to_pickle(self, prob, file_name):
+		with open(file_name, "wb") as fp:
+			pickle.dump(prob, fp)
+
+    def read_prob(self, file_name):
+        with open(file_name, "rb") as fp:
+            return pickle.load(fp)
+
     def init_all_dicts(self):
         with open(self.file_name, "rb") as fp:
             dep_mult = pickle.load(fp)

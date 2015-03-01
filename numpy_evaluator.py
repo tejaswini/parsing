@@ -7,32 +7,42 @@ from constants import Constants
 
 class Evaluator:
 
-    def __init__(self, corpus_path, dep_path, dep_mult_holder,\
-                     cont_stop_mult_holder):
+    def __init__(self, corpus_path, dep_path, prob_attach,\
+                     prob_cont):
         self.sentences = self.get_sentences(corpus_path)
         self.dep_index = self.get_sentences(dep_path)
-        self.dep_mult_holder = dep_mult_holder
-        self.cont_stop_mult_holder = cont_stop_mult_holder
+        self.prob_attach = prob_attach
+        self.prob_cont = prob_cont
         self.directed_depen = 0
         self.undirected_depen = 0
         self.total_deps = 0
         self.incorrect_sent = []
         self.incorrect_dep = defaultdict(int)
+        self.constants = Constants()
+        self.prob = self.constants.compute_prob(self.prob_attach, self.prob_cont)
 
     def evaluate_sentences(self):
         for i,sentence in enumerate(self.sentences):
             actual_dep = self.dep_index[i].strip()
             if len(sentence.split()) != len(actual_dep.split()):
                    continue
-
-            self.total_deps += len(sentence.split(" "))
-            eisner_algo = EisnerAlgo()
-            eisner_algo.eisner_first_order(sentence.strip())
             
-            eisner_algo.compute_marginals(
-            depen = parsing_algo.best_edges()
+            print "sentence is " + sentence
+            sentence = "* " + sentence
+            sent = sentence
+            sentence = sentence.strip().split(" ")
+            self.total_deps += len(sentence)
+            eisner_algo = EisnerAlgo()
+            eisner_algo.eisner_first_order(sentence)
+            tag_indices = self.constants.indices_of_tag_dict(sentence)
+            
+            label_scores = self.constants.construct_label_scores(sentence,
+                                                    tag_indices, self.prob)
+            eisner_algo.compute_marginals(label_scores)
+            depen = eisner_algo.best_edges(label_scores)
             self.evaluate_accuracy(depen, actual_dep.split(" "), \
-                                   sentence)
+                                   sent)
+
         print "correct depen is " + str(self.directed_depen)
         print "total depen is " + str(self.total_deps)
         print "directed accuracy is " + \
@@ -41,28 +51,29 @@ class Evaluator:
               str(float(self.undirected_depen) / self.total_deps)
 
     def evaluate_accuracy(self, depen, actual_dep, sentence):
+        print "actual dep is"
+        pprint.pprint(actual_dep)
+        print "depen is"
+        pprint.pprint(depen)
         sent_acc = 0
         incorrect_dep_key = ("")
-        words = sentence.split()
-        for key, value in depen.iteritems():
-            pos_tag, index = key[0], key[1]
-            dep_tag, dep_index = value[0], value[1]
-            if(int(actual_dep[index-1]) == dep_index):
+        words = sentence
+        for index in range(1,len(depen)):
+            if(int(actual_dep[index - 1]) == depen[index]):
                 sent_acc += 1
                 self.directed_depen += 1
                 self.undirected_depen += 1
             else:
-              if(dep_index!=0 \
-                     and int(actual_dep[dep_index-1]) == index):
-                self.undirected_depen += 1
-                sent_acc += 1
-              else:
+                if(int(actual_dep[depen[index] - 1]) == index):
+                    self.undirected_depen += 1
+                    sent_acc += 1
+                else:
                   word = words[index-1]
-                  incorrect_dep = ("ROOT" if dep_index == 0\
-                                       else words[dep_index-1])
-                  correct_dep = ("ROOT" if int(actual_dep[index-1])\
-                      == 0  else words[(int(actual_dep[index-1]) - 1)])
-                  incorrect_dep_key = (word,incorrect_dep, correct_dep)
+                  # incorrect_dep = ("ROOT" if actual_dep[index] == 0\
+                  #                      else words[index-1])
+                  # correct_dep = ("ROOT" if int(actual_dep[index])\
+                  #     == 0  else words[(int(actual_dep[index-1]) - 1)])
+                  # incorrect_dep_key = (word,incorrect_dep, correct_dep)
       
         if(sent_acc <= 2 and len(actual_dep) >= 2):
             self.incorrect_sent.append(sentence)
@@ -79,13 +90,11 @@ class Evaluator:
             fp.writelines(("%s\n" % line for line in data))
 
 if __name__ == "__main__":
-    pickle_handler = PickleHandler("data/harmonic_final")
-    dep_mult_holder, cont_stop_mult_holder =\
-          pickle_handler.init_all_dicts()
+    pickle_handler = PickleHandler("data/numpy_final")
+    prob_attach, prob_cont =  pickle_handler.init_all_dicts()
 
-    evaluator = Evaluator("data/sentences_train.txt",
-       "data/dep_index_train.txt", dep_mult_holder,
-                          cont_stop_mult_holder)
+    evaluator = Evaluator("data/sentences_dev.txt",
+       "data/dep_index_dev.txt", prob_attach, prob_cont)
 
     evaluator.evaluate_sentences()
     evaluator.write_to_file("incorrect_sent_rule",
