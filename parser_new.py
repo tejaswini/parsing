@@ -52,12 +52,13 @@ class Parser:
                 self.tag_indices = self.constants.indices_of_tag_dict(sentence)
                 eisner_algo.reset_values()
                 eisner_algo.eisner_first_order(sentence)
-                label_scores = self.constants.construct_label_scores(sentence,
-                                                    self.tag_indices, self.prob)
+                label_scores = self.constants.construct_label_scores(\
+                    self.tag_indices, self.prob)
                 marginals = eisner_algo.compute_marginals(label_scores)
 #		sum_probs[i] += math.log(parsing_algo.total_potentials)
                 edges = eisner_algo.graph.edges
                 self.update_counts(marginals, edges, sentence)
+
 #TODO:
             # if(sum_probs[i-1]!=1.0):
             #     assert sum_probs[i] > sum_probs[i-1], \
@@ -70,34 +71,62 @@ class Parser:
 # TODO validate_multinomials(self.dep_multinomial_holder)
 
 
-    def increment_counts(self, heads, marginals, sentence):
+    def increment_counts(self, heads, marginals, sentence, tails_for_head):
         n = len(sentence)
+        shapes, direction, row, column = self.constants.get_indices(heads, n)
+        adj = self.compute_adj_for_heads(heads, tails_for_head, shapes,
+                                         direction, n)
 
-        shapes = heads / (n*n*2)
+
         indices_needed = self.filter_stop_cont_indices(shapes)
-        stop_cont = shapes[indices_needed]
-        stop_cont /= 2
+        stop_cont = shapes[indices_needed] / 2
 
-        x = heads - (shapes * n*n*2)
-        direction = x / (n*n)
+        direction = direction[indices_needed]
+        row = row[indices_needed]
+        column = column[indices_needed]
+        
+        right_indices = np.where(direction == self.constants.right)
+        left_indices = np.where(direction == self.constants.left)
 
-        x = x%(n*n*2)
-        is_adj = x / (n*n)
-    
-        x = x - (is_adj*n*n)
-        row = x/n
+        heads1 = np.zeros(row.size, dtype=np.int64)
+        heads1[right_indices] = row[right_indices]
+        heads1[left_indices] = column[left_indices]
 
-        row = self.tag_indices[row]
-    
-        column = x%n
-        column = self.tag_indices[column]
+        mod = np.zeros(row.size, dtype=np.int64)
+        mod[right_indices] = column[right_indices]
+        mod[left_indices] = row[left_indices]
         
         if(np.isnan(sum(marginals[indices_needed]))):
             pprint.pprint("marginals nan")
             pprint.pprint(marginals)
 
-        self.counts_attach[direction[indices_needed].tolist(), row[indices_needed].tolist(), column[indices_needed].tolist()] += marginals[indices_needed]
-        self.counts_cont[direction[indices_needed].tolist(), is_adj[indices_needed].tolist(), row[indices_needed].tolist(), stop_cont.tolist()] += marginals[indices_needed]
+        self.counts_attach[direction.tolist(), heads1.tolist(), mod.tolist()] +=\
+                                          marginals[indices_needed]
+        self.counts_cont[direction.tolist(), adj[indices_needed].tolist(), heads1.tolist(), stop_cont.tolist()] += marginals[indices_needed]
+
+    def compute_adj_for_heads(self, heads, tails_for_head, shapes_head,direction_head, n):
+        adj = np.array([], dtype=np.int64)
+        for index, head in enumerate(heads):
+            tails = tails_for_head[head]
+            shapes, direction, row, column = self.constants.get_indices(tails, n)
+
+            if(shapes_head[index] == 1):
+                if(direction_head[index] == self.constants.left):
+
+                     adj_value = self.constants.is_adj(row[1], column[0])
+                     adj = np.append(adj, adj_value)
+                else:
+                     adj_value = self.constants.is_adj(row[0], column[1])
+                     adj = np.append(adj, adj_value)
+
+            elif (shapes_head[index] == 2 or shapes_head[index] == 0) and\
+                              row[0] == column[0]:
+                adj = np.append(adj, self.constants.adj)
+            else:
+                adj = np.append(adj, self.constants.non_adj)
+
+        return adj
+                    
 
     def filter_stop_cont_indices(self, shapes):
         return np.where(shapes != 1)
@@ -107,12 +136,17 @@ class Parser:
 
     def update_counts(self, edge_marginals, edges, sentence):
         heads = np.array([], dtype=np.int64)
+        tails_for_heads = {}
         marginals = np.array([], dtype=np.float64)
         for edge in edges:
             marginals = np.append(marginals, edge_marginals[edge.id])
             heads = np.append(heads, [edge.head.label])
+            tails = np.array([], dtype=np.int64)
+            for tail in edge.tail:
+               tails = np.append(tails, tail.label)
+            tails_for_heads[edge.head.label] = tails
 
-        self.increment_counts(heads, marginals, sentence)
+        self.increment_counts(heads, marginals, sentence, tails_for_heads)
 
     def indices_of_tag_dict(self, indices):
         return np.array([self.tag_dict[i] for i in indices])

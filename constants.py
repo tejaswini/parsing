@@ -21,15 +21,12 @@ class Constants:
     def indices_of_tag_dict(self, sentence):
         return np.array([self.tag_dict[word] for word in sentence])
 
-    def construct_label_scores(self, sentence, tag_indices, prob):
+    def construct_label_scores(self, tag_indices, prob):
 
        label_scores = np.empty((self.num_shapes, self.num_dir, self.num_adj,
                               tag_indices.size, tag_indices.size))
        label_scores.fill(0.00)
 
-       print "tag indices"
-       pprint.pprint(tag_indices)
-       
        shapes = np.repeat(np.arange(self.num_shapes), self.num_adj * self.num_dir*\
                 tag_indices.size * tag_indices.size)
 
@@ -94,3 +91,17 @@ class Constants:
        prob[self.trap:self.tri_stop] = 1
 #       self.pickle_handler.write_prob_to_pickle(prob, "data/prob"+str(self.iteration))
        return prob
+
+    def get_indices(self, heads, n):
+        SHAPES = 0; DIRECTION = 1; ROW = 2; COLUMN = 3;
+
+        indices = np.unravel_index(heads, [self.num_shapes, self.num_dir, n, n])
+        return indices[SHAPES], indices[DIRECTION], indices[ROW],\
+                   indices[COLUMN]
+
+    def is_adj(self, head,  split):
+        if abs(head - split) <=1:
+            return self.adj
+        else:
+            return self.non_adj
+
