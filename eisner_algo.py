@@ -2,6 +2,7 @@ import pydecode
 import numpy as np
 import pprint
 from collections import defaultdict
+from constants import Constants
 
 class EisnerAlgo:
 
@@ -9,12 +10,13 @@ class EisnerAlgo:
         self.num_shapes = 3
         self.tri=0; self.trap = 1;self.tri_stop=2;
         self.adj = 1; self.non_adj = 0
-        self.num_dir = 2
+        self.num_dir = 2; self.num_adj = 2
         self.right = 0; self.left = 1
         self.graph = None
         self.out = []
         self.weights = None
         self.sentence = None
+        self.constants = Constants()
 
     def eisner_first_order(self, sentence):
         self.sentence = sentence
@@ -35,7 +37,7 @@ class EisnerAlgo:
                if(index == 0):
                     continue
 
-               chart.set(triStop, [[tri]], labels=[np.int64(self.out[self.tri_stop,
+               chart.set(triStop, [[tri]], labels=[np.int64(self.out[self.tri_stop,\
                                          direction, self.adj, index, index])])
 
         self.all_label_indices = np.array([],dtype=np.int64)
@@ -50,18 +52,16 @@ class EisnerAlgo:
                 out_ind = np.zeros([t-s], dtype=np.int64)
                 if s!=0:
                     label_indices = self.compute_label_indices(self.trap,
-                                     self.left, t , s)
+                                                    self.left, t , s)
 
-                    self.all_label_indices = np.append(self.all_label_indices, label_indices)
-                    
                     chart.set_t(coder[self.trap, self.left,  s,  t],
                             coder[self.tri_stop,  self.right, s,  s:t],
                             coder[self.tri,  self.left,  s+1:t+1, t],
                             labels=label_indices)
 
+
                 label_indices = self.compute_label_indices(self.trap, self.right,
                                                            s, t)
-                self.all_label_indices = np.append(self.all_label_indices, label_indices)
                 chart.set_t(coder[self.trap, self.right, s, t],
                         coder[self.tri,  self.right, s,  s:t],
                         coder[self.tri_stop,  self.left,  s+1:t+1, t],
@@ -70,7 +70,6 @@ class EisnerAlgo:
                 if s!=0:
                     label_indices = self.compute_label_indices(self.tri, self.left,
                                                            t, s)
-                    self.all_label_indices = np.append(self.all_label_indices, label_indices)
 
                     chart.set_t(coder[self.tri,  self.left,  s, t],
                             coder[self.tri_stop,  self.left,  s, s:t],
@@ -78,8 +77,6 @@ class EisnerAlgo:
                     
                     label_indices = self.compute_label_indices(self.tri_stop,
                                      self.left, s, t)
-                    
-                    self.all_label_indices = np.append(self.all_label_indices, label_indices)
 
                     chart.set(coder[self.tri_stop, self.left,  s, t],
                         [[coder[self.tri,  self.left, s, t]]],
@@ -88,7 +85,6 @@ class EisnerAlgo:
 
                 label_indices = self.compute_label_indices(self.tri,
                                      self.right, s, t)
-                self.all_label_indices = np.append(self.all_label_indices, label_indices)
 
                 chart.set_t(coder[self.tri,  self.right, s, t],
                         coder[self.trap, self.right, s,  s+1:t+1],
@@ -97,7 +93,6 @@ class EisnerAlgo:
                 if s!=0 or (s==0 and t==n-1):
                     label_indices = self.compute_label_indices(self.tri_stop,
                                      self.right, s, t)
-                    self.all_label_indices = np.append(self.all_label_indices, label_indices)
 
                     chart.set(coder[self.tri_stop, self.right,  s, t],
                         [[coder[self.tri,  self.right, s, t]]],
@@ -131,8 +126,21 @@ class EisnerAlgo:
         for edge in best_edges:
             heads = np.append(heads, edge.head.label)
 
-        shapes, direction, head, modifier =\
-            self.get_indices_of_heads(heads, len(self.sentence))
+        shapes, direction, head, modifier = self.get_indices_of_heads(heads,
+                                                          len(self.sentence))
+
+        print "shapes"
+        pprint.pprint(shapes)
+
+        print "direct"
+        pprint.pprint(direction)
+
+        print "head"
+        pprint.pprint(head)
+
+        print "mod"
+        pprint.pprint(modifier)
+
 
         right_indices = np.where(direction == 0)
         left_indices = np.where(direction == 1)
@@ -143,21 +151,9 @@ class EisnerAlgo:
         return depen
 
     def get_indices_of_heads(self, heads, n):
-        shapes = heads / (n*n*2)
-        indices = np.where(shapes == 1)
-
-        x = heads - (shapes * n * n * 2)
-        direction = x / (n*n)
-
-        x = x%(n*n*2)
-        is_adj = x / (n*n)
-    
-        x = x - (is_adj*n*n)
-        row = x/n
-
-        column = x%n
-
-        return shapes[indices], direction[indices], row[indices], column[indices]
+        shapes, direction, row, column = self.constants.get_indices(heads, n)
+        indices_needed = np.where(shapes == 1)
+        return shapes[indices_needed], direction[indices_needed], row[indices_needed], column[indices_needed]
 
     def compute_label_indices(self, shape, direction, head, mod):
         indices = np.tile([shape, direction, 0, head, mod], abs(head-mod)).\
